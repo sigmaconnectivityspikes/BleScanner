@@ -1,30 +1,57 @@
 package se.sigmaconnectivity.blescanner
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
+import android.bluetooth.le.AdvertiseCallback
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
 import android.content.Intent
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
-import android.util.Log
+import android.os.ParcelUuid
 import androidx.core.app.NotificationCompat
 import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.scan.ScanFilter
 import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.disposables.CompositeDisposable
 import org.koin.android.ext.android.inject
+import timber.log.Timber
+import java.util.*
 
 
 class BleScanService() : Service() {
 
     private val rxBleClient: RxBleClient by inject()
     private val compositeDisposable = CompositeDisposable()
-    private val TAG = this::class.simpleName
+    private var scanStatus = BLEFeatureStatus.INACTIVE
+    private var advertiseStatus = BLEFeatureStatus.INACTIVE
+
+    private val bluetoothAdapter by lazy {
+        (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
+    }
+
+    private val notificationManager by lazy {
+        getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+    }
+
+    private val mAdvertiseCallback: AdvertiseCallback = object : AdvertiseCallback() {
+        override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
+            Timber.d("Peripheral advertising started.")
+            advertiseStatus = BLEFeatureStatus.ACTIVE
+            updateNotification()
+        }
+
+        override fun onStartFailure(errorCode: Int) {
+            Timber.d("Peripheral advertising failed: $errorCode")
+            advertiseStatus = BLEFeatureStatus.INACTIVE
+            updateNotification()
+        }
+    }
 
     override fun onBind(intent: Intent): IBinder {
         return Binder()
@@ -32,69 +59,92 @@ class BleScanService() : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
-        createNotificationChannel()
-        startForeground(1, createNotification())
+        startForeground(Consts.NOTIFICATION_ID, createNotification())
         startScan()
 
         return START_NOT_STICKY
     }
 
     private fun startScan() {
-        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-        bluetoothManager?.adapter?.let {
-            scanLeDevice()
-        } ?: Log.e(TAG, "BT not supported")
+        scanLeDevice()
+        bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
+    }
+
+    private fun startAdv(mBluetoothAdapter: BluetoothAdapter) {
+        val settings = AdvertiseSettings.Builder()
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+            .setConnectable(false)
+            .setTimeout(0)
+            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
+            .build()
+        val data: AdvertiseData = AdvertiseData.Builder()
+            .setIncludeDeviceName(true)
+            .addServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
+            .build()
+
+        mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(settings, data, mAdvertiseCallback)
     }
 
     private fun scanLeDevice() {
-        val scanSettings =
-            ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build()
-        println("scan devices started")
+        val scanSettings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+            .build()
+        val scanFilter = ScanFilter.Builder()
+            .setServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
+            .build()
         compositeDisposable.add(
-            rxBleClient.scanBleDevices(scanSettings, ScanFilter.Builder().setDeviceName(null).build())
+            rxBleClient.scanBleDevices(scanSettings, scanFilter)
+                .doOnSubscribe {
+                    Timber.d("scanLeDevice started")
+                    scanStatus = BLEFeatureStatus.ACTIVE
+                }
+                .doOnDispose { scanStatus = BLEFeatureStatus.INACTIVE }
                 .subscribe(
                     {
-                        println("Device finded")
-                        println(it.bleDevice.toString())
-                        Log.d(TAG, "Device finded ${it.bleDevice.bluetoothDevice.address}")
+                        Timber.d("Device found ${it.bleDevice.bluetoothDevice.address}")
                     },
                     {
-                        println("Device errored")
-                        println(it)
+                        Timber.d("Device found $it")
                     }
                 )
         )
     }
 
-    override fun onDestroy() {
-        compositeDisposable.clear()
-        stopForeground(true)
-        stopSelf()
-        super.onDestroy()
-    }
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val serviceChannel = NotificationChannel(
-                CHANNEL_ID,
-                "Foreground Service Channel",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            val manager = getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannel(serviceChannel)
-        }
+    private fun updateNotification() {
+        notificationManager?.notify(Consts.NOTIFICATION_ID, createNotification())
     }
 
     private fun createNotification(): Notification {
-        val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0)
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Foreground Service")
+        val notificationIntent = Intent(applicationContext, MainActivity::class.java)
+        val pendingIntent = PendingIntent.getActivity(
+            baseContext,
+            0,
+            notificationIntent,
+            0
+        )
+        return NotificationCompat.Builder(applicationContext, Consts.NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(getString(R.string.app_name))
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(getString(R.string.notification_content, scanStatus, advertiseStatus))
+            )
             .setContentIntent(pendingIntent)
             .build()
     }
 
-    companion object {
-        private const val CHANNEL_ID = "ForegroundServiceChannel"
+    override fun onDestroy() {
+        compositeDisposable.clear()
+        bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
+            Timber.d("Advertising stopped")
+        }
+        stopForeground(true)
+        stopSelf()
+        super.onDestroy()
     }
+}
+
+enum class BLEFeatureStatus {
+    ACTIVE,
+    INACTIVE
 }

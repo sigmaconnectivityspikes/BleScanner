@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "se.sigmaconnectivity.blescanner"
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -42,6 +42,9 @@ dependencies {
 
     //koin
     implementation "org.koin:koin-android:2.1.5"
+
+    //Timber
+    implementation 'com.jakewharton.timber:timber:4.7.1'
 
     //RxAndroidBle
     implementation "com.polidea.rxandroidble2:rxandroidble:1.11.0"
