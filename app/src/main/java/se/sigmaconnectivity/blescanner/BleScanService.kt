@@ -16,10 +16,12 @@ import android.os.IBinder
 import android.os.ParcelUuid
 import androidx.core.app.NotificationCompat
 import com.polidea.rxandroidble2.RxBleClient
+import com.polidea.rxandroidble2.scan.ScanCallbackType
 import com.polidea.rxandroidble2.scan.ScanFilter
 import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.disposables.CompositeDisposable
 import org.koin.android.ext.android.inject
+import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import timber.log.Timber
 import java.util.*
 
@@ -27,6 +29,7 @@ import java.util.*
 class BleScanService() : Service() {
 
     private val rxBleClient: RxBleClient by inject()
+    private val contactUseCase: ContactUseCase by inject()
     private val compositeDisposable = CompositeDisposable()
     private var scanStatus = BLEFeatureStatus.INACTIVE
     private var advertiseStatus = BLEFeatureStatus.INACTIVE
@@ -77,6 +80,7 @@ class BleScanService() : Service() {
             .setTimeout(0)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
             .build()
+        //TODO add service data with unique ID
         val data: AdvertiseData = AdvertiseData.Builder()
             .setIncludeDeviceName(true)
             .addServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
@@ -88,9 +92,11 @@ class BleScanService() : Service() {
     private fun scanLeDevice() {
         val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
             .setServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
+            .setDeviceName(null)
             .build()
         compositeDisposable.add(
             rxBleClient.scanBleDevices(scanSettings, scanFilter)
@@ -101,12 +107,43 @@ class BleScanService() : Service() {
                 .doOnDispose { scanStatus = BLEFeatureStatus.INACTIVE }
                 .subscribe(
                     {
-                        Timber.d("Device found ${it.bleDevice.bluetoothDevice.address}")
+                        //TODO get generated unique user id(use service data)
+                        val contactHash = it.bleDevice.bluetoothDevice.address
+
+                        if (it.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
+                            processFirstMatch(contactHash, it.timestampNanos / 1000000L)
+                        } else {
+                            processMatchLost(contactHash, it.timestampNanos / 1000000L)
+                        }
                     },
                     {
-                        Timber.d("Device found $it")
+                        Timber.d("Device found with error \n $it")
                     }
                 )
+        )
+    }
+
+    private fun processFirstMatch(contactHash: String, timestamp: Long) {
+        Timber.d("CALLBACK_TYPE_FIRST_MATCH: $contactHash")
+        compositeDisposable.add(
+            contactUseCase.processContactMatch(contactHash, timestamp)
+                .subscribe({
+                    Timber.d("processContactMatch() SUCCESS")
+                }, {
+                    Timber.e("processContactMatch() FAILED \n $it")
+                })
+        )
+    }
+
+    private fun processMatchLost(contactHash: String, timestamp: Long) {
+        Timber.d("CALLBACK_TYPE_MATCH_LOST: $contactHash")
+        compositeDisposable.add(
+            contactUseCase.processContactLost(contactHash, timestamp)
+                .subscribe({
+                    Timber.d("processContactLost() SUCCESS")
+                }, {
+                    Timber.d("processContactLost() FAILED \n $it")
+                })
         )
     }
 
