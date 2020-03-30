@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "803805760808",
+    "firebase_url": "https://korona-sigma.firebaseio.com",
+    "project_id": "korona-sigma",
+    "storage_bucket": "korona-sigma.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:803805760808:android:7692d0355fc2173ea1541d",
+        "android_client_info": {
+          "package_name": "se.sigmaconnectivity.blescanner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "803805760808-3moi6k16mue4qq95rhaq8rhngtf75cjd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "se.sigmaconnectivity.blescanner",
+            "certificate_hash": "1dff5244f2c8c286973fe0f96f2b344c5b6c6a24"
+          }
+        },
+        {
+          "client_id": "803805760808-gi54arp4nji1ud77fiq8sntvgila82gc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCLYHvQYjF74QtZhxbJ346S0hv9wkienFo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "803805760808-gi54arp4nji1ud77fiq8sntvgila82gc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

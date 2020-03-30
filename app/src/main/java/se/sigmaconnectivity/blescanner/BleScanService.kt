@@ -21,6 +21,7 @@ import com.polidea.rxandroidble2.scan.ScanFilter
 import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.disposables.CompositeDisposable
 import org.koin.android.ext.android.inject
+import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import timber.log.Timber
 import java.util.*
@@ -31,8 +32,8 @@ class BleScanService() : Service() {
     private val rxBleClient: RxBleClient by inject()
     private val contactUseCase: ContactUseCase by inject()
     private val compositeDisposable = CompositeDisposable()
-    private var scanStatus = BLEFeatureStatus.INACTIVE
-    private var advertiseStatus = BLEFeatureStatus.INACTIVE
+    private var scanStatus = FeatureStatus.INACTIVE
+    private var advertiseStatus = FeatureStatus.INACTIVE
 
     private val bluetoothAdapter by lazy {
         (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
@@ -45,13 +46,13 @@ class BleScanService() : Service() {
     private val mAdvertiseCallback: AdvertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
             Timber.d("Peripheral advertising started.")
-            advertiseStatus = BLEFeatureStatus.ACTIVE
+            advertiseStatus = FeatureStatus.ACTIVE
             updateNotification()
         }
 
         override fun onStartFailure(errorCode: Int) {
             Timber.d("Peripheral advertising failed: $errorCode")
-            advertiseStatus = BLEFeatureStatus.INACTIVE
+            advertiseStatus = FeatureStatus.INACTIVE
             updateNotification()
         }
     }
@@ -102,9 +103,9 @@ class BleScanService() : Service() {
             rxBleClient.scanBleDevices(scanSettings, scanFilter)
                 .doOnSubscribe {
                     Timber.d("scanLeDevice started")
-                    scanStatus = BLEFeatureStatus.ACTIVE
+                    scanStatus = FeatureStatus.ACTIVE
                 }
-                .doOnDispose { scanStatus = BLEFeatureStatus.INACTIVE }
+                .doOnDispose { scanStatus = FeatureStatus.INACTIVE }
                 .subscribe(
                     {
                         //TODO get generated unique user id(use service data)
@@ -179,9 +180,4 @@ class BleScanService() : Service() {
         stopSelf()
         super.onDestroy()
     }
-}
-
-enum class BLEFeatureStatus {
-    ACTIVE,
-    INACTIVE
 }
