@@ -15,8 +15,8 @@ class FcmService : FirebaseMessagingService() {
         // Check if message contains a data payload.
         remoteMessage.data.isNotEmpty().let {
             with(remoteMessage) {
-                Timber.d("FCM message notification: $notification")
-                showToast("FCM message notification: $notification")
+                Timber.d("FCM message notification: ${notification?.title} ${notification?.body} $data")
+                showToast("FCM message notification:  ${notification?.title} $data")
             }
         }
     }

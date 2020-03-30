@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.messaging.FirebaseMessaging
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_main.*
@@ -126,6 +127,16 @@ class MainActivity : AppCompatActivity() {
                 Timber.d("FCM token $token")
                 Toast.makeText(baseContext, "Fcm token: $token", Toast.LENGTH_SHORT).show()
             })
+
+        FirebaseMessaging.getInstance().subscribeToTopic("virus")
+            .addOnCompleteListener { task ->
+                var msg = "FCM topic subscribe success"
+                if (!task.isSuccessful) {
+                    msg = "FCM topic subscribe failed"
+                }
+                Timber.d(msg)
+                Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+            }
     }
 
     override fun onDestroy() {
