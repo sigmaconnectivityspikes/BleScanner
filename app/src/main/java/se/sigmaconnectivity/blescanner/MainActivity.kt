@@ -7,11 +7,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.messaging.FirebaseMessaging
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_main.*
@@ -39,6 +42,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         initView()
+        initializeFcm()
     }
 
     private fun hasBLE(): Boolean {
@@ -67,9 +71,9 @@ class MainActivity : AppCompatActivity() {
     private fun requestBackgroundPerm() {
         compositeDispose.add(
             rxPermissions.request(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                )
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )
                 .subscribe {
                     if (!it) {
                         Toast.makeText(this, "Location access is required", Toast.LENGTH_LONG)
@@ -108,6 +112,31 @@ class MainActivity : AppCompatActivity() {
                 Timber.d("createNotificationChannel: ${serviceChannel.id}")
             }
         }
+    }
+
+    private fun initializeFcm() {
+        FirebaseInstanceId.getInstance().instanceId
+            .addOnCompleteListener(OnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Timber.w(task.exception, "Couldn't get FCM token")
+                    return@OnCompleteListener
+                }
+
+                val token = task.result?.token
+                // Log and toast
+                Timber.d("FCM token $token")
+                Toast.makeText(baseContext, "Fcm token: $token", Toast.LENGTH_SHORT).show()
+            })
+
+        FirebaseMessaging.getInstance().subscribeToTopic("virus")
+            .addOnCompleteListener { task ->
+                var msg = "FCM topic subscribe success"
+                if (!task.isSuccessful) {
+                    msg = "FCM topic subscribe failed"
+                }
+                Timber.d(msg)
+                Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+            }
     }
 
     override fun onDestroy() {
