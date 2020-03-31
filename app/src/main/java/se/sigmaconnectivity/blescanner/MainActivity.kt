@@ -128,7 +128,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(baseContext, "Fcm token: $token", Toast.LENGTH_SHORT).show()
             })
 
-        FirebaseMessaging.getInstance().subscribeToTopic("virus")
+        FirebaseMessaging.getInstance().subscribeToTopic("infections")
             .addOnCompleteListener { task ->
                 var msg = "FCM topic subscribe success"
                 if (!task.isSuccessful) {
