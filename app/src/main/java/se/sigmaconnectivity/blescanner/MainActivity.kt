@@ -7,14 +7,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.android.ext.android.inject
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
@@ -26,6 +27,8 @@ class MainActivity : AppCompatActivity() {
         RxPermissions(this)
     }
 
+    private val sharedPrefs: SharedPrefs by inject()
+
     private val compositeDispose = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,9 +36,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         if (hasBLE()) {
+            checkUUID()
             requestPermissions()
-        } else {
-            Toast.makeText(this, "Device does not support BLE", Toast.LENGTH_LONG).show()
         }
 
         initView()
@@ -53,6 +55,10 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.startForegroundService(this, serviceIntent)
         }
         btn_stopService.setOnClickListener { stopService(serviceIntent) }
+    }
+
+    private fun checkUUID() {
+        if (sharedPrefs.getUserUUID().isBlank()) { sharedPrefs.generateUserUUIDAndSave() }
     }
 
     private fun requestPermissions() {
