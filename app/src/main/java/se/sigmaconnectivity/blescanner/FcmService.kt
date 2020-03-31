@@ -1,35 +1,41 @@
 package se.sigmaconnectivity.blescanner
 
-import android.os.Handler
-import android.os.Looper
-import android.widget.Toast
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
+import org.koin.android.ext.android.inject
+import se.sigmaconnectivity.blescanner.data.mapper.toInfectionItem
+import se.sigmaconnectivity.blescanner.domain.usecase.NotifyInfectionUseCase
 import timber.log.Timber
 
 class FcmService : FirebaseMessagingService() {
+    private val compositeDisposable = CompositeDisposable()
+
+    private val notifyInfectionUseCase: NotifyInfectionUseCase by inject()
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // TODO(developer): Handle FCM messages here.
         Timber.d("FCM from: ${remoteMessage.from}")
 
         // Check if message contains a data payload.
         remoteMessage.data.isNotEmpty().let {
-            with(remoteMessage) {
-                Timber.d("FCM message notification: ${notification?.title} ${notification?.body} $data")
-                showToast("FCM message notification:  ${notification?.title} $data")
-            }
+            handleNotification(remoteMessage)
         }
     }
 
-    //TODO: just for debug purposes, we should communicate with UI better way
-    private fun showToast(text: String) {
-        val handler = Handler(Looper.getMainLooper())
-        handler.post { Toast.makeText(baseContext, text, Toast.LENGTH_SHORT).show() }
+    private fun handleNotification(remoteMessage: RemoteMessage) {
+        notifyInfectionUseCase.execute(remoteMessage.data.toInfectionItem())
+            .subscribe({
+                Timber.d("Notified new infection")
+            }, {
+                Timber.e(it)
+            }
+            ).addTo(compositeDisposable)
     }
 
     override fun onNewToken(token: String) {
         Timber.d("Refreshed token: $token")
-
         // If you want to send messages to this application instance or
         // manage this apps subscriptions on the server side, send the
         // Instance ID token to your app server.
@@ -38,5 +44,10 @@ class FcmService : FirebaseMessagingService() {
 
     private fun sendRegistrationToServer(token: String?) {
         // TODO: Implement this method to send token to your app server.
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        compositeDisposable.clear()
     }
 }

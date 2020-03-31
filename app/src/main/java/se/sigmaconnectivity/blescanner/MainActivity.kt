@@ -17,7 +17,10 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessaging
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
 import kotlinx.android.synthetic.main.activity_main.*
+import org.koin.android.ext.android.inject
+import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
@@ -28,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private val rxPermissions by lazy {
         RxPermissions(this)
     }
+    private val trackInfectionsUseCase: TrackInfectionsUseCase by inject()
 
     private val compositeDispose = CompositeDisposable()
 
@@ -137,6 +141,15 @@ class MainActivity : AppCompatActivity() {
                 Timber.d(msg)
                 Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
             }
+        trackInfectionsUseCase.execute().subscribe({
+            val message = "New infection: $it"
+            Timber.d(message)
+            Toast.makeText(baseContext, message, Toast.LENGTH_LONG).show()
+        },
+            {
+                Timber.e(it)
+            }).addTo(compositeDispose)
+
     }
 
     override fun onDestroy() {
