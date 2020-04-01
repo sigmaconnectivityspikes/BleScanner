@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
+import com.google.android.material.snackbar.Snackbar
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.FragmentHomeBinding
@@ -43,12 +44,15 @@ class HomeFragment : BaseFragment() {
     }
 
     private fun registerObservers() {
-        vm.leServiceStatusEvent.observe(viewLifecycleOwner, Observer {
-            if (it == FeatureStatus.ACTIVE) {
-                context?.let { context -> ContextCompat.startForegroundService(context, serviceIntent) }
+        vm.leServiceStatusEvent.observe(viewLifecycleOwner, Observer { featureStatus ->
+            if (featureStatus == FeatureStatus.ACTIVE) {
+                context?.let { ContextCompat.startForegroundService(it, serviceIntent) }
             } else {
                 binding.btnStopService.setOnClickListener { context?.stopService(serviceIntent) }
             }
+        })
+        vm.errorEvent.observe(viewLifecycleOwner, Observer { errorMessage ->
+            view?.let { Snackbar.make(it, errorMessage, Snackbar.LENGTH_SHORT) }
         })
     }
 

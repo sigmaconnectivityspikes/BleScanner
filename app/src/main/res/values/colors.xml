@@ -7,4 +7,7 @@
     <color name="grayish_blue">#99ABB7</color>
     <color name="blue">#0070cd</color>
     <color name="white_darker">#f7f7f7</color>
+    <color name="text_color">#757575</color>
+    <color name="colored_text">#51c2f5</color>
+    <color name="background">#fafafa</color>
 </resources>

@@ -9,4 +9,22 @@
     <string name="main_menu_home">Home</string>
     <string name="main_menu_news">News</string>
     <string name="main_menu_help">Help</string>
+
+    <!--  HomeFragment  -->
+    <string name="home_last_update_title">Last update</string>
+    <string name="home_last_update_content">%1$s\n%2$s</string>
+    <string name="home_scanned_today_title">Scanned today</string>
+    <string name="home_scanned_today_content">%1$d\ndevices</string>
+    <string name="home_subtitle">How it works?</string>
+    <string name="home_devices">devices</string>
+
+    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur
+adipiscing elit. Ut vehicula, diam vel
+dignissim porttitor, urna nulla consectetur
+tortor, quis vestibulum dui magna eget
+velit. Sed pellentesque massa non ante
+interdum, in commodo risus vehicula.
+Aenean volutpat neque et tincidunt
+sodales. Praesent sit amet nulla hendrerit,
+faucibus nisl nec, elementum lacus.</string>
 </resources>
