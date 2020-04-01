@@ -1,4 +1,4 @@
-package se.sigmaconnectivity.blescanner
+package se.sigmaconnectivity.blescanner.ui.executor
 
 import io.reactivex.Scheduler
 import io.reactivex.android.schedulers.AndroidSchedulers

@@ -4,4 +4,9 @@
     <!--  Notifications  -->
     <string name="notification_channel_name">KoronaLokalizator notifications</string>
     <string name="notification_content">Services status:\nScanning: %1$s\nAdvertising: %2$s</string>
+
+    <!--  Main Menu  -->
+    <string name="main_menu_home">Home</string>
+    <string name="main_menu_news">News</string>
+    <string name="main_menu_help">Help</string>
 </resources>

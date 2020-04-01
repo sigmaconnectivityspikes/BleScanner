@@ -1,4 +1,4 @@
-package se.sigmaconnectivity.blescanner
+package se.sigmaconnectivity.blescanner.service
 
 import android.app.Notification
 import android.app.NotificationManager
@@ -22,9 +22,12 @@ import com.polidea.rxandroidble2.scan.ScanResult
 import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.disposables.CompositeDisposable
 import org.koin.android.ext.android.inject
+import se.sigmaconnectivity.blescanner.Consts
+import se.sigmaconnectivity.blescanner.R
 import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
+import se.sigmaconnectivity.blescanner.ui.MainActivity
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
