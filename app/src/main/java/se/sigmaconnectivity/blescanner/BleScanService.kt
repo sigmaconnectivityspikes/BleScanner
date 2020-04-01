@@ -18,19 +18,22 @@ import androidx.core.app.NotificationCompat
 import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.scan.ScanCallbackType
 import com.polidea.rxandroidble2.scan.ScanFilter
+import com.polidea.rxandroidble2.scan.ScanResult
 import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.disposables.CompositeDisposable
 import org.koin.android.ext.android.inject
+import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import timber.log.Timber
+import java.nio.ByteBuffer
 import java.util.*
-
 
 class BleScanService() : Service() {
 
     private val rxBleClient: RxBleClient by inject()
     private val contactUseCase: ContactUseCase by inject()
+    private val sharedPrefs: SharedPrefs by inject()
     private val compositeDisposable = CompositeDisposable()
     private var scanStatus = FeatureStatus.INACTIVE
     private var advertiseStatus = FeatureStatus.INACTIVE
@@ -76,16 +79,23 @@ class BleScanService() : Service() {
 
     private fun startAdv(mBluetoothAdapter: BluetoothAdapter) {
         val settings = AdvertiseSettings.Builder()
-            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
             .setConnectable(false)
             .setTimeout(0)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
             .build()
-        //TODO add service data with unique ID
+
+        val userId = sharedPrefs.getUserId() ?: throw IllegalArgumentException("Empty user id")
         val data: AdvertiseData = AdvertiseData.Builder()
-            .setIncludeDeviceName(true)
-            .addServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
+            .setIncludeDeviceName(false)
+            .setIncludeTxPowerLevel(false)
+            .addServiceData(
+                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
+                generateUID(userId)
+            )
             .build()
+
+        Timber.d("$data")
 
         mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(settings, data, mAdvertiseCallback)
     }
@@ -96,8 +106,11 @@ class BleScanService() : Service() {
             .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
-            .setDeviceName(null)
+            .setServiceData(
+                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
+                ByteBuffer.allocate(8).array(),
+                ByteBuffer.allocate(8).array()
+            )
             .build()
         compositeDisposable.add(
             rxBleClient.scanBleDevices(scanSettings, scanFilter)
@@ -107,15 +120,15 @@ class BleScanService() : Service() {
                 }
                 .doOnDispose { scanStatus = FeatureStatus.INACTIVE }
                 .subscribe(
-                    {
-                        //TODO get generated unique user id(use service data)
-                        val contactHash = it.bleDevice.bluetoothDevice.address
-
-                        if (it.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
-                            processFirstMatch(contactHash, it.timestampNanos / 1000000L)
-                        } else {
-                            processMatchLost(contactHash, it.timestampNanos / 1000000L)
-                        }
+                    {scanResult ->
+                        val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
+                        assembleUID(scanResult)?.let {
+                            if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
+                                processFirstMatch(it, timestampMillis)
+                            } else {
+                                processMatchLost(it, timestampMillis)
+                            }
+                        } ?: Timber.e("Can not assemble UID")
                     },
                     {
                         Timber.d("Device found with error \n $it")
@@ -146,6 +159,20 @@ class BleScanService() : Service() {
                     Timber.d("processContactLost() FAILED \n $it")
                 })
         )
+    }
+
+    private fun generateUID(userId: Long): ByteArray {
+        val byteBuffer = ByteBuffer.allocate(8).apply {
+            putLong(userId)
+        }
+        return byteBuffer.array()
+    }
+
+    private fun assembleUID(scanResult: ScanResult): String? {
+        return scanResult.scanRecord.getServiceData(ParcelUuid.fromString(Consts.SERVICE_UUID))
+            ?.let {
+                String(it, Charsets.UTF_8)
+            }
     }
 
     private fun updateNotification() {

@@ -33,6 +33,8 @@ class MainActivity : AppCompatActivity() {
     }
     private val trackInfectionsUseCase: TrackInfectionsUseCase by inject()
 
+    private val sharedPrefs: SharedPrefs by inject()
+
     private val compositeDispose = CompositeDisposable()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,9 +42,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         if (hasBLE()) {
+            checkUUID()
             requestPermissions()
-        } else {
-            Toast.makeText(this, "Device does not support BLE", Toast.LENGTH_LONG).show()
         }
 
         initView()
@@ -61,6 +62,10 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.startForegroundService(this, serviceIntent)
         }
         btn_stopService.setOnClickListener { stopService(serviceIntent) }
+    }
+
+    private fun checkUUID() {
+        if (sharedPrefs.getUserId() == null) { sharedPrefs.generateUserUUIDAndSave() }
     }
 
     private fun requestPermissions() {

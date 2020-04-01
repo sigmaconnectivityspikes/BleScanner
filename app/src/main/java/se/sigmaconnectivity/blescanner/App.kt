@@ -4,6 +4,7 @@ import android.app.Application
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import se.sigmaconnectivity.blescanner.data.dataModule
+import se.sigmaconnectivity.blescanner.di.appModule
 import timber.log.Timber
 
 class App: Application() {
