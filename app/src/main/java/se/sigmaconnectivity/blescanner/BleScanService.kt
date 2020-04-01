@@ -22,12 +22,12 @@ import com.polidea.rxandroidble2.scan.ScanResult
 import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.disposables.CompositeDisposable
 import org.koin.android.ext.android.inject
+import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
-
 
 class BleScanService() : Service() {
 
@@ -85,12 +85,13 @@ class BleScanService() : Service() {
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
             .build()
 
+        val userId = sharedPrefs.getUserId() ?: throw IllegalArgumentException("Empty user id")
         val data: AdvertiseData = AdvertiseData.Builder()
             .setIncludeDeviceName(false)
             .setIncludeTxPowerLevel(false)
             .addServiceData(
                 ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
-                generateUID()
+                generateUID(userId)
             )
             .build()
 
@@ -120,7 +121,7 @@ class BleScanService() : Service() {
                 .doOnDispose { scanStatus = FeatureStatus.INACTIVE }
                 .subscribe(
                     {scanResult ->
-                        val timestampMillis = scanResult.timestampNanos / 1000000L
+                        val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
                         assembleUID(scanResult)?.let {
                             if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
                                 processFirstMatch(it, timestampMillis)
@@ -160,9 +161,9 @@ class BleScanService() : Service() {
         )
     }
 
-    private fun generateUID(): ByteArray {
+    private fun generateUID(userId: Long): ByteArray {
         val byteBuffer = ByteBuffer.allocate(8).apply {
-            putLong(sharedPrefs.getUserId() ?: throw IllegalArgumentException("empty user id"))
+            putLong(userId)
         }
         return byteBuffer.array()
     }
