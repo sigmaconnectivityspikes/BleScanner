@@ -92,7 +92,6 @@ class BleScanService() : Service() {
                 ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
                 generateUID()
             )
-//            .addServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
             .build()
 
         Timber.d("$data")
@@ -106,8 +105,11 @@ class BleScanService() : Service() {
             .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
-            .setDeviceName(null)
+            .setServiceData(
+                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
+                ByteBuffer.allocate(8).array(),
+                ByteBuffer.allocate(8).array()
+            )
             .build()
         compositeDisposable.add(
             rxBleClient.scanBleDevices(scanSettings, scanFilter)
@@ -159,10 +161,10 @@ class BleScanService() : Service() {
     }
 
     private fun generateUID(): ByteArray {
-        //TODO add service data with unique ID
+        //TODO generate UID, 13 Bytes available
         val userUUID = UUID.fromString(sharedPrefs.getUserUUID())
         val byteBuffer = ByteBuffer.allocate(8).apply {
-            putLong(userUUID.mostSignificantBits)
+            putLong(userUUID.leastSignificantBits)
         }
         return byteBuffer.array()
     }
