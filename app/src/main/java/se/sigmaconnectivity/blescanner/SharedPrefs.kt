@@ -2,6 +2,7 @@ package se.sigmaconnectivity.blescanner
 
 import android.content.Context
 import androidx.core.content.edit
+import se.sigmaconnectivity.blescanner.utils.Crc64Util
 import timber.log.Timber
 import java.util.*
 
@@ -18,9 +19,12 @@ class SharedPrefs(private val context: Context) {
         Timber.d("Generated UUID = $uuid")
     }
 
-    fun getUserUUID(): String {
+    fun getUserId(): Long? = if(getUserUuid().isBlank()) null else getUserUuid().toCrc()
+
+    private fun getUserUuid(): String {
         val uuid = prefs.getString(Consts.SHARED_PREFS_UUID, "").toString()
         Timber.d("Current UUID = $uuid")
         return uuid
     }
+    private fun String.toCrc() = Crc64Util.checksum(toByteArray(Charsets.UTF_8))
 }

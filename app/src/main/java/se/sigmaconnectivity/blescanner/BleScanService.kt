@@ -161,10 +161,8 @@ class BleScanService() : Service() {
     }
 
     private fun generateUID(): ByteArray {
-        //TODO generate UID, 13 Bytes available
-        val userUUID = UUID.fromString(sharedPrefs.getUserUUID())
         val byteBuffer = ByteBuffer.allocate(8).apply {
-            putLong(userUUID.leastSignificantBits)
+            putLong(sharedPrefs.getUserId() ?: throw IllegalArgumentException("empty user id"))
         }
         return byteBuffer.array()
     }

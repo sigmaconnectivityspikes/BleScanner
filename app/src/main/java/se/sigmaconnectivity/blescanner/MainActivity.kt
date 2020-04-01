@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkUUID() {
-        if (sharedPrefs.getUserUUID().isBlank()) { sharedPrefs.generateUserUUIDAndSave() }
+        if (sharedPrefs.getUserId() == null) { sharedPrefs.generateUserUUIDAndSave() }
     }
 
     private fun requestPermissions() {
