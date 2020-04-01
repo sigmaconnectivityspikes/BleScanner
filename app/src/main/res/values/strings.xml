@@ -18,6 +18,9 @@
     <string name="home_subtitle">How it works?</string>
     <string name="home_devices">devices</string>
 
+    <!--  NewsFragment  -->
+    <string name="news_url">https://twitter.com/MZ_GOV_PL</string>
+
     <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur
 adipiscing elit. Ut vehicula, diam vel
 dignissim porttitor, urna nulla consectetur
