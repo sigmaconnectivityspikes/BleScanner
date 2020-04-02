@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId "se.sigmaconnectivity.blescanner"
-        minSdkVersion 24
+        minSdkVersion 21
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -68,7 +68,8 @@ dependencies {
     implementation "com.jakewharton.threetenabp:threetenabp:1.2.1"
 
     //QR codes
-    implementation 'com.journeyapps:zxing-android-embedded:4.1.0'
+    implementation('com.journeyapps:zxing-android-embedded:4.1.0') { transitive = false }
+    implementation 'com.google.zxing:core:3.3.0'
 
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
