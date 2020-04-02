@@ -22,6 +22,10 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <style name="Index" parent="Subtitle">
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <style name="ColorBody" parent="TextAppearance.MaterialComponents.Body1">
         <item name="android:textColor">@color/colored_text</item>
     </style>

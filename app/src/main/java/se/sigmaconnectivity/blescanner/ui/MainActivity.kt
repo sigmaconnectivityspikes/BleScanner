@@ -22,6 +22,7 @@ import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
+import se.sigmaconnectivity.blescanner.SharedPrefs
 import se.sigmaconnectivity.blescanner.databinding.ActivityMainBinding
 import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
 import timber.log.Timber
