@@ -1,6 +1,10 @@
-package se.sigmaconnectivity.blescanner.livedata
+package se.sigmaconnectivity.blescanner.ui.common.livedata
 
-import androidx.lifecycle.*
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 
 fun <T> LiveData<T>.observe(lifecycleOwner: LifecycleOwner, block: () -> Unit) {
     observe(lifecycleOwner, Observer { block() })

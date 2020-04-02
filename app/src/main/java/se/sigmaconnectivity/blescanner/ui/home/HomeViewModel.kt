@@ -5,7 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import io.reactivex.rxkotlin.addTo
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
-import se.sigmaconnectivity.blescanner.ui.base.BaseViewModel
+import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel
 
 class HomeViewModel(private val contactUseCase: ContactUseCase) : BaseViewModel() {
     private val mutableLEServiceStatus = MutableLiveData<FeatureStatus>()

@@ -10,7 +10,7 @@ import com.journeyapps.barcodescanner.BarcodeEncoder
 import kotlinx.android.synthetic.main.fragment_help.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.livedata.observe
+import se.sigmaconnectivity.blescanner.ui.common.livedata.observe
 
 class HelpFragment : Fragment() {
 
