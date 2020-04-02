@@ -10,4 +10,5 @@
     <color name="text_color">#757575</color>
     <color name="colored_text">#51c2f5</color>
     <color name="background">#fafafa</color>
+    <color name="light_blue">#4fc3f7</color>
 </resources>
