@@ -1,11 +1,42 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+    </style>
+    
+    <style name="Subtitle" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:textColor">@color/text_color</item>
+        <item name="android:lineSpacingExtra">4dp</item>
+    </style>
+
+    <style name="Subtitle.Black" parent="Subtitle">
+        <item name="android:textColor">@android:color/black</item>
+    </style>
+
+    <style name="Subtitle.Black.Bold" parent="Subtitle.Black">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Index" parent="Subtitle">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="ColorBody" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">@color/colored_text</item>
+    </style>
+
+    <style name="ColorBody.Bold" parent="ColorBody">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="ColorBody.Bold.Big" parent="ColorBody.Bold">
+        <item name="android:textSize">28sp</item>
+        <item name="android:lineSpacingExtra">8dp</item>
     </style>
 
 </resources>
