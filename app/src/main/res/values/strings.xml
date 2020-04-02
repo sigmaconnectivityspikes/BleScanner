@@ -4,4 +4,6 @@
     <!--  Notifications  -->
     <string name="notification_channel_name">KoronaLokalizator notifications</string>
     <string name="notification_content">Services status:\nScanning: %1$s\nAdvertising: %2$s</string>
+    <string name="stop_service">Stop service!</string>
+    <string name="start_service">Start service!</string>
 </resources>

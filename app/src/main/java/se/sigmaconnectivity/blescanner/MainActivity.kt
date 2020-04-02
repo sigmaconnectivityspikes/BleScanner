@@ -21,7 +21,6 @@ import io.reactivex.rxkotlin.addTo
 import kotlinx.android.synthetic.main.activity_main.*
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import se.sigmaconnectivity.blescanner.data.db.SharedPrefs
 import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
 import timber.log.Timber
 
@@ -36,8 +35,6 @@ class MainActivity : AppCompatActivity() {
         RxPermissions(this)
     }
     private val trackInfectionsUseCase: TrackInfectionsUseCase by inject()
-
-    private val sharedPrefs: SharedPrefs by inject()
 
     private val compositeDispose = CompositeDisposable()
 
