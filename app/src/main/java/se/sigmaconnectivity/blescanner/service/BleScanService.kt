@@ -26,7 +26,6 @@ import org.koin.android.ext.android.inject
 import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.SharedPrefs
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
@@ -100,7 +99,11 @@ class BleScanService() : Service() {
 
             Timber.d("$data")
 
-            mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(settings, data, mAdvertiseCallback)
+            mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
+                settings,
+                data,
+                mAdvertiseCallback
+            )
         }, {
             Timber.e(it)
         }).addTo(compositeDisposable)
@@ -119,53 +122,47 @@ class BleScanService() : Service() {
                 ByteBuffer.allocate(8).array()
             )
             .build()
-        compositeDisposable.add(
-            rxBleClient.scanBleDevices(scanSettings, scanFilter)
-                .doOnSubscribe {
-                    Timber.d("scanLeDevice started")
-                    scanStatus = FeatureStatus.ACTIVE
+        rxBleClient.scanBleDevices(scanSettings, scanFilter)
+            .doOnSubscribe {
+                Timber.d("scanLeDevice started")
+                scanStatus = FeatureStatus.ACTIVE
+            }
+            .doOnDispose { scanStatus = FeatureStatus.INACTIVE }
+            .subscribe(
+                { scanResult ->
+                    val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
+                    assembleUID(scanResult)?.let {
+                        if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
+                            processFirstMatch(it, timestampMillis)
+                        } else {
+                            processMatchLost(it, timestampMillis)
+                        }
+                    } ?: Timber.e("Can not assemble UID")
+                },
+                {
+                    Timber.d("Device found with error \n $it")
                 }
-                .doOnDispose { scanStatus = FeatureStatus.INACTIVE }
-                .subscribe(
-                    {scanResult ->
-                        val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
-                        assembleUID(scanResult)?.let {
-                            if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
-                                processFirstMatch(it, timestampMillis)
-                            } else {
-                                processMatchLost(it, timestampMillis)
-                            }
-                        } ?: Timber.e("Can not assemble UID")
-                    },
-                    {
-                        Timber.d("Device found with error \n $it")
-                    }
-                )
-        )
+            ).addTo(compositeDisposable)
     }
 
     private fun processFirstMatch(contactHash: String, timestamp: Long) {
         Timber.d("CALLBACK_TYPE_FIRST_MATCH: $contactHash")
-        compositeDisposable.add(
-            contactUseCase.processContactMatch(contactHash, timestamp)
-                .subscribe({
-                    Timber.d("processContactMatch() SUCCESS")
-                }, {
-                    Timber.e("processContactMatch() FAILED \n $it")
-                })
-        )
+        contactUseCase.processContactMatch(contactHash, timestamp)
+            .subscribe({
+                Timber.d("processContactMatch() SUCCESS")
+            }, {
+                Timber.e("processContactMatch() FAILED \n $it")
+            }).addTo(compositeDisposable)
     }
 
     private fun processMatchLost(contactHash: String, timestamp: Long) {
         Timber.d("CALLBACK_TYPE_MATCH_LOST: $contactHash")
-        compositeDisposable.add(
-            contactUseCase.processContactLost(contactHash, timestamp)
-                .subscribe({
-                    Timber.d("processContactLost() SUCCESS")
-                }, {
-                    Timber.d("processContactLost() FAILED \n $it")
-                })
-        )
+        contactUseCase.processContactLost(contactHash, timestamp)
+            .subscribe({
+                Timber.d("processContactLost() SUCCESS")
+            }, {
+                Timber.d("processContactLost() FAILED \n $it")
+            }).addTo(compositeDisposable)
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {

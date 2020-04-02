@@ -16,24 +16,17 @@ import androidx.navigation.ui.NavigationUI
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessaging
-import com.google.zxing.BarcodeFormat
-import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.SharedPrefs
 import se.sigmaconnectivity.blescanner.databinding.ActivityMainBinding
-import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
-import se.sigmaconnectivity.blescanner.livedata.observe
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
-
-    private val vm by viewModel<MainViewModel>()
 
     private val rxPermissions by lazy {
         RxPermissions(this)
@@ -41,12 +34,11 @@ class MainActivity : AppCompatActivity() {
     private val trackInfectionsUseCase: TrackInfectionsUseCase by inject()
 
     private val compositeDispose = CompositeDisposable()
-    private lateinit var binding : ActivityMainBinding
+    private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-        binding.vm = vm
         binding.lifecycleOwner = this
 
         setUpNavigation()
@@ -65,22 +57,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun initView() {
-        btn_startService.setOnClickListener {
-            createNotificationChannel()
-            ContextCompat.startForegroundService(this, serviceIntent)
-        }
-        btn_stopService.setOnClickListener { stopService(serviceIntent) }
-        mainViewModel.userId.observe(this, ::updateUserId)
-    }
-
-    private fun updateUserId(userId: String) {
-        val barcodeEncoder = BarcodeEncoder()
-        val bitmap = barcodeEncoder.encodeBitmap(userId, BarcodeFormat.QR_CODE, 500, 500)
-        qrImage.setImageBitmap(bitmap)
-        qrText.text = userId
-    }
-
     private fun requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             requestBackgroundPerm()
@@ -91,32 +67,28 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun requestBackgroundPerm() {
-        compositeDispose.add(
-            rxPermissions.request(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            )
-                .subscribe {
-                    if (!it) {
-                        Toast.makeText(this, "Location access is required", Toast.LENGTH_LONG)
-                            .show()
-                        requestLocationPerm()
-                    }
-                }
+        rxPermissions.request(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
         )
+            .subscribe {
+                if (!it) {
+                    Toast.makeText(this, "Location access is required", Toast.LENGTH_LONG)
+                        .show()
+                    requestLocationPerm()
+                }
+            }.addTo(compositeDispose)
     }
 
     private fun requestLocationPerm() {
-        compositeDispose.add(
-            rxPermissions.request(Manifest.permission.ACCESS_FINE_LOCATION)
-                .subscribe {
-                    if (!it) {
-                        Toast.makeText(this, "Location access is required", Toast.LENGTH_LONG)
-                            .show()
-                        requestLocationPerm()
-                    }
+        rxPermissions.request(Manifest.permission.ACCESS_FINE_LOCATION)
+            .subscribe {
+                if (!it) {
+                    Toast.makeText(this, "Location access is required", Toast.LENGTH_LONG)
+                        .show()
+                    requestLocationPerm()
                 }
-        )
+            }.addTo(compositeDispose)
     }
 
     private fun createNotificationChannel() {
