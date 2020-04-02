@@ -17,5 +17,5 @@ val dataModule = module {
     single<UidRepository> { UidRepositoryImpl(get()) }
     single { SharedPrefs(androidApplication()) }
 
-    factory<HashConverter> { Base64HashConverter() }
+    factory<HashConverter> { HexHashConverter() }
 }

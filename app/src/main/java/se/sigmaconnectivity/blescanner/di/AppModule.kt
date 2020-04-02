@@ -2,7 +2,9 @@ package se.sigmaconnectivity.blescanner.di
 
 import com.polidea.rxandroidble2.RxBleClient
 import org.koin.android.ext.koin.androidApplication
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import se.sigmaconnectivity.blescanner.MainViewModel
 import se.sigmaconnectivity.blescanner.domain.executor.PostExecutionThread
 import se.sigmaconnectivity.blescanner.domain.usecase.*
 
@@ -14,4 +16,6 @@ val appModule = module {
     factory { NotifyInfectionUseCase(get(), get()) }
     factory { GetUserIdHashUseCase(get(), get()) }
     factory { GetHumanReadableUserIdUseCase(get(), get(), get()) }
+
+    viewModel  { MainViewModel(get()) }
 }

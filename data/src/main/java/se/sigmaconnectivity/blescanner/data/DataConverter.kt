@@ -1,11 +1,16 @@
 package se.sigmaconnectivity.blescanner.data
 
-import android.util.Base64
 import io.reactivex.Single
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 
-class Base64HashConverter : HashConverter {
+class HexHashConverter : HashConverter {
     override fun convert(input: ByteArray): Single<String> = Single.fromCallable {
-        Base64.encodeToString(input, Base64.DEFAULT)
+        input.toHexString()
+    }
+
+    private fun ByteArray.toHexString() : String {
+        return this.joinToString("") {
+            java.lang.String.format("%02x", it)
+        }
     }
 }

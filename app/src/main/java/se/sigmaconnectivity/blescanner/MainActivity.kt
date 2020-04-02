@@ -15,6 +15,8 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.zxing.BarcodeFormat
+import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
@@ -22,6 +24,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
+import se.sigmaconnectivity.blescanner.livedata.observe
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
@@ -62,6 +65,14 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.startForegroundService(this, serviceIntent)
         }
         btn_stopService.setOnClickListener { stopService(serviceIntent) }
+        mainViewModel.userId.observe(this, ::updateUserId)
+    }
+
+    private fun updateUserId(userId: String) {
+        val barcodeEncoder = BarcodeEncoder()
+        val bitmap = barcodeEncoder.encodeBitmap(userId, BarcodeFormat.QR_CODE, 500, 500)
+        qrImage.setImageBitmap(bitmap)
+        qrText.text = userId
     }
 
     private fun requestPermissions() {
