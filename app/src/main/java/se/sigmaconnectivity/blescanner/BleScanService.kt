@@ -24,6 +24,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
 import org.threeten.bp.Duration
+import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
@@ -36,6 +37,8 @@ class BleScanService() : Service() {
     private val rxBleClient: RxBleClient by inject()
     private val contactUseCase: ContactUseCase by inject()
     private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
+    //TODO: Use usecase for this conversion
+    private val hashConverter: HashConverter by inject()
     private val compositeDisposable = CompositeDisposable()
     private var scanStatus = FeatureStatus.INACTIVE
     private var advertiseStatus = FeatureStatus.INACTIVE
@@ -167,7 +170,8 @@ class BleScanService() : Service() {
     private fun assembleUID(scanResult: ScanResult): String? {
         return scanResult.scanRecord.getServiceData(ParcelUuid.fromString(Consts.SERVICE_UUID))
             ?.let {
-                String(it, Charsets.UTF_8)
+                //TODO: change it to chained rx invocation
+                hashConverter.convert(it).blockingGet()
             }
     }
 
