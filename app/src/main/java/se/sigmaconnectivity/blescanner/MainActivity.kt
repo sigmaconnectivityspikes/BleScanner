@@ -20,10 +20,14 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import kotlinx.android.synthetic.main.activity_main.*
 import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import se.sigmaconnectivity.blescanner.data.db.SharedPrefs
 import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
+
+    private val mainViewModel by viewModel<MainViewModel>()
 
     private val serviceIntent: Intent by lazy {
         Intent(this, BleScanService::class.java)
@@ -42,7 +46,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         if (hasBLE()) {
-            checkUUID()
             requestPermissions()
         }
 
@@ -62,10 +65,6 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.startForegroundService(this, serviceIntent)
         }
         btn_stopService.setOnClickListener { stopService(serviceIntent) }
-    }
-
-    private fun checkUUID() {
-        if (sharedPrefs.getUserId() == null) { sharedPrefs.generateUserUUIDAndSave() }
     }
 
     private fun requestPermissions() {

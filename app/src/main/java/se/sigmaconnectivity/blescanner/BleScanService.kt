@@ -21,10 +21,12 @@ import com.polidea.rxandroidble2.scan.ScanFilter
 import com.polidea.rxandroidble2.scan.ScanResult
 import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
 import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
@@ -33,7 +35,7 @@ class BleScanService() : Service() {
 
     private val rxBleClient: RxBleClient by inject()
     private val contactUseCase: ContactUseCase by inject()
-    private val sharedPrefs: SharedPrefs by inject()
+    private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
     private val compositeDisposable = CompositeDisposable()
     private var scanStatus = FeatureStatus.INACTIVE
     private var advertiseStatus = FeatureStatus.INACTIVE
@@ -85,19 +87,20 @@ class BleScanService() : Service() {
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
             .build()
 
-        val userId = sharedPrefs.getUserId() ?: throw IllegalArgumentException("Empty user id")
-        val data: AdvertiseData = AdvertiseData.Builder()
-            .setIncludeDeviceName(false)
-            .setIncludeTxPowerLevel(false)
-            .addServiceData(
-                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
-                generateUID(userId)
-            )
-            .build()
+        getUserIdHashUseCase.execute().subscribe({ userUid ->
+            val data: AdvertiseData = AdvertiseData.Builder()
+                .setIncludeDeviceName(false)
+                .setIncludeTxPowerLevel(false)
+                .addServiceData(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), userUid)
+                .build()
 
-        Timber.d("$data")
+            Timber.d("$data")
 
-        mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(settings, data, mAdvertiseCallback)
+            mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(settings, data, mAdvertiseCallback)
+        }, {
+            Timber.e(it)
+        }).addTo(compositeDisposable)
+
     }
 
     private fun scanLeDevice() {
@@ -159,13 +162,6 @@ class BleScanService() : Service() {
                     Timber.d("processContactLost() FAILED \n $it")
                 })
         )
-    }
-
-    private fun generateUID(userId: Long): ByteArray {
-        val byteBuffer = ByteBuffer.allocate(8).apply {
-            putLong(userId)
-        }
-        return byteBuffer.array()
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
