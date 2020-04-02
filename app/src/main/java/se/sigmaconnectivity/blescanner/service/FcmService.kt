@@ -1,4 +1,4 @@
-package se.sigmaconnectivity.blescanner
+package se.sigmaconnectivity.blescanner.service
 
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
