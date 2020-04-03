@@ -1,6 +1,7 @@
 package se.sigmaconnectivity.blescanner.data
 
 import io.reactivex.Completable
+import io.reactivex.Maybe
 import io.reactivex.Single
 import se.sigmaconnectivity.blescanner.data.db.ContactDao
 import se.sigmaconnectivity.blescanner.data.mapper.dataToDomain
@@ -13,6 +14,12 @@ class ContactRepositoryImpl(private val contactDao: ContactDao) : ContactReposit
     override fun getContactByHashOrNew(hash: String): Single<Entity.Contact> {
         return Single.fromCallable {
             contactDao.getContactByHash(hash)?.dataToDomain() ?: Entity.Contact(hash)
+        }
+    }
+
+    override fun getContactByHash(hash: String): Maybe<Entity.Contact> {
+        return Maybe.fromCallable {
+            contactDao.getContactByHash(hash)?.dataToDomain()
         }
     }
 

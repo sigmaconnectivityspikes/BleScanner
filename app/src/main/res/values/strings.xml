@@ -12,6 +12,7 @@
     <string name="main_menu_home">Home</string>
     <string name="main_menu_news">News</string>
     <string name="main_menu_help">Help</string>
+    <string name="possible_infection_info">    You may have been infected, please contact with services!</string>
 
     <!--  HomeFragment  -->
     <string name="home_last_update_title">Last update</string>
@@ -50,4 +51,5 @@ interdum, in commodo risus vehicula.
 Aenean volutpat neque et tincidunt
 sodales. Praesent sit amet nulla hendrerit,
 faucibus nisl nec, elementum lacus.</string>
+    <string name="ok">OK</string>
 </resources>
