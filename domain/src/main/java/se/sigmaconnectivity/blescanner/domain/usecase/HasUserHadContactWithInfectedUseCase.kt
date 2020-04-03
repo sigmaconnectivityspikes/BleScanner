@@ -11,9 +11,6 @@ class HasUserHadContactWithInfectedUseCase(
     private val contactRepository: ContactRepository
 ) {
 
-    //TODO: consult value with medical experts:
-    val RISKY_CONTACT_DURATION = Duration.ofMinutes(2)
-
     fun execute(hash: String): Single<Boolean> {
         return contactRepository.getContactByHash(hash)
             .map {contact ->
@@ -23,3 +20,6 @@ class HasUserHadContactWithInfectedUseCase(
             .observeOn(postExecutionThread.scheduler)
     }
 }
+
+//TODO: consult value with medical experts:
+val RISKY_CONTACT_DURATION = Duration.ofMinutes(2)
