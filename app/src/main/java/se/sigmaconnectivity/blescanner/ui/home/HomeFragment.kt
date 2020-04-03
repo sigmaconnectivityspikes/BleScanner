@@ -14,7 +14,7 @@ import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.FragmentHomeBinding
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.service.BleScanService
-import se.sigmaconnectivity.blescanner.ui.base.BaseFragment
+import se.sigmaconnectivity.blescanner.ui.common.BaseFragment
 
 class HomeFragment : BaseFragment() {
 

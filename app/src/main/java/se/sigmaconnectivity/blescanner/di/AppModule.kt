@@ -16,7 +16,7 @@ import se.sigmaconnectivity.blescanner.ui.home.HomeViewModel
 
 val appModule = module {
     single { RxBleClient.create(androidApplication()) }
-    factory<PostExecutionThread> { se.sigmaconnectivity.blescanner.ui.executor.PostExecutionThread() }
+    factory<PostExecutionThread> { se.sigmaconnectivity.blescanner.executor.PostExecutionThread() }
     factory<ContactUseCase> { ContactUseCaseImpl(get(), get()) }
     factory { TrackInfectionsUseCase(get(), get()) }
     factory { NotifyInfectionUseCase(get(), get()) }

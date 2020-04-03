@@ -1,4 +1,4 @@
-package se.sigmaconnectivity.blescanner.ui.base
+package se.sigmaconnectivity.blescanner.ui.common
 
 import androidx.fragment.app.Fragment
 import io.reactivex.disposables.CompositeDisposable

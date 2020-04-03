@@ -8,21 +8,21 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
     
-    <style name="Subtitle" parent="TextAppearance.MaterialComponents.Subtitle1">
+    <style name="Info" parent="TextAppearance.MaterialComponents.Subtitle1">
         <item name="android:textColor">@color/text_color</item>
         <item name="android:lineSpacingExtra">4dp</item>
     </style>
 
-    <style name="Subtitle.Black" parent="Subtitle">
+    <style name="Info.Black" parent="Info">
         <item name="android:textColor">@android:color/black</item>
     </style>
 
-    <style name="Subtitle.Black.Bold" parent="Subtitle.Black">
+    <style name="Subtitle" parent="Info.Black">
         <item name="android:textSize">18sp</item>
         <item name="android:textStyle">bold</item>
     </style>
 
-    <style name="Index" parent="Subtitle">
+    <style name="Index" parent="Info">
         <item name="android:textStyle">bold</item>
     </style>
 

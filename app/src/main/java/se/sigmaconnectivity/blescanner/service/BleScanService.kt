@@ -143,7 +143,7 @@ class BleScanService() : Service() {
                     } ?: Timber.e("Can not assemble UID")
                 },
                 {
-                    Timber.d("Device found with error \n $it")
+                    Timber.d(it, "Device found with error")
                 }
             ).addTo(compositeDisposable)
     }
@@ -154,7 +154,7 @@ class BleScanService() : Service() {
             .subscribe({
                 Timber.d("processContactMatch() SUCCESS")
             }, {
-                Timber.e("processContactMatch() FAILED \n $it")
+                Timber.e(it, "processContactMatch() FAILED")
             }).addTo(compositeDisposable)
     }
 
