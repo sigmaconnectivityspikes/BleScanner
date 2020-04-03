@@ -135,7 +135,6 @@ class BleScanService() : Service() {
                 { scanResult ->
                     val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
                     assembleUID(scanResult)?.let {
-                        Timber.d("WNASILOWSKILOG $scanResult $it")
                         if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
                             processFirstMatch(it, timestampMillis)
                         } else {

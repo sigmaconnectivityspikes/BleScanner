@@ -18,6 +18,8 @@ val appModule = module {
     factory { NotifyInfectionUseCase(get(), get()) }
     factory { GetUserIdHashUseCase(get(), get()) }
     factory { GetHumanReadableUserIdUseCase(get(), get(), get()) }
+    factory { HasUserHadContactWithInfectedUseCase(get(), get()) }
+    factory { TrackHasUserHadContactWithInfectedUseCase(get(), get(), get()) }
 }
 
 val viewModelModule = module {

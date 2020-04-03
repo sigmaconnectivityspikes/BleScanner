@@ -11,6 +11,8 @@ dependencies {
 
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
+    //Time
+    implementation "com.jakewharton.threetenabp:threetenabp:1.2.1"
 }
 
 sourceCompatibility = "7"
