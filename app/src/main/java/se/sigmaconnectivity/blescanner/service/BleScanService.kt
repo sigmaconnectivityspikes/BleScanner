@@ -170,15 +170,12 @@ class BleScanService() : Service() {
 
     private fun assembleUID(scanResult: ScanResult): String? {
         val resultMap = scanResult.scanRecord.serviceData
-        Timber.d("data received: ${scanResult.scanRecord.serviceData} - ${resultMap.map { (_, value) ->
-            hashConverter.convert(
-                value
-            ).blockingGet()
-        }}")
-        return scanResult.scanRecord.serviceData.values.firstOrNull()
+        return resultMap.values.firstOrNull()
             ?.let {
                 //TODO: change it to chained rx invocation
-                hashConverter.convert(it).blockingGet()
+                val data = hashConverter.convert(it).blockingGet()
+                Timber.d("data received: $data")
+                data
             }
     }
 
