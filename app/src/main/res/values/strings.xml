@@ -30,6 +30,17 @@
     <!--  NewsFragment  -->
     <string name="news_url">https://twitter.com/MZ_GOV_PL</string>
 
+    <!--  HelpFragment  -->
+    <string name="help_qr_title">QR code</string>
+    <string name="help_qr_info">This QR code represents your unique ID,\nwhich you have to show to your doctor.</string>
+    <string name="help_near_you_title">Near you</string>
+    <string name="help_hospitals_title">Hospitals</string>
+    <string name="help_pharmacies_title">Pharmacies</string>
+    <string name="help_supplies_title">Supplies</string>
+    <string name="help_instructions_title">Instructions</string>
+    <string name="help_useful_information_title">Useful information</string>
+    <string name="help_useful_information_info">How to wash hands right and properly. Useful tricks and lifehacks.</string>
+
     <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur
 adipiscing elit. Ut vehicula, diam vel
 dignissim porttitor, urna nulla consectetur

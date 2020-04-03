@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import com.google.zxing.BarcodeFormat
 import com.journeyapps.barcodescanner.BarcodeEncoder
 import se.sigmaconnectivity.blescanner.domain.usecase.GetHumanReadableUserIdUseCase
+import timber.log.Timber
 
 class HelpViewModel(private val getHumanReadableUserIdUseCase: GetHumanReadableUserIdUseCase) :
     ViewModel() {
@@ -18,4 +19,24 @@ class HelpViewModel(private val getHumanReadableUserIdUseCase: GetHumanReadableU
                     BarcodeEncoder().encodeBitmap(userId, BarcodeFormat.QR_CODE, 500, 500)
                 }.toFlowable()
         )
+
+    fun onHospitalsSelected() {
+        //TODO impl
+        Timber.d("Hospitals selected")
+    }
+
+    fun onPharmaciesSelected() {
+        //TODO impl
+        Timber.d("Pharmacies selected")
+    }
+
+    fun onSuppliesSelected() {
+        //TODO impl
+        Timber.d("Supplies selected")
+    }
+
+    fun onUsefulInfoSelected() {
+        //TODO impl
+        Timber.d("UsefulInfo selected")
+    }
 }

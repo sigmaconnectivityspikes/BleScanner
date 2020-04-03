@@ -46,7 +46,6 @@ class HelpFragment : Fragment() {
         ivQrCode.setImageBitmap(replaceWhiteWithTransparent(bitmap))
     }
 
-
     //TODO move to use case
     private fun replaceWhiteWithTransparent(source: Bitmap): Bitmap {
         val target = Bitmap.createBitmap(source)

@@ -30,10 +30,10 @@
         <androidx.cardview.widget.CardView
             android:id="@+id/cvLastUpdate"
             android:layout_width="0dp"
-            android:layout_height="140dp"
+            android:layout_height="@dimen/card_view"
             android:layout_marginStart="24dp"
             android:layout_marginEnd="12dp"
-            app:cardCornerRadius="11dp"
+            app:cardCornerRadius="@dimen/card_corner_radius"
             app:layout_constraintBottom_toBottomOf="@+id/ivBLE"
             app:layout_constraintEnd_toStartOf="@+id/cvScannedToday"
             app:layout_constraintStart_toStartOf="parent"
@@ -46,7 +46,7 @@
                 android:padding="16dp">
 
                 <TextView
-                    style="@style/Subtitle"
+                    style="@style/Info"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/home_last_update_title" />
@@ -72,10 +72,10 @@
         <androidx.cardview.widget.CardView
             android:id="@+id/cvScannedToday"
             android:layout_width="0dp"
-            android:layout_height="140dp"
+            android:layout_height="@dimen/card_view"
             android:layout_marginStart="12dp"
             android:layout_marginEnd="24dp"
-            app:cardCornerRadius="11dp"
+            app:cardCornerRadius="@dimen/card_corner_radius"
             app:layout_constraintBottom_toBottomOf="@+id/ivBLE"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/cvLastUpdate"
@@ -88,7 +88,7 @@
                 android:padding="16dp">
 
                 <TextView
-                    style="@style/Subtitle"
+                    style="@style/Info"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/home_scanned_today_title" />
@@ -116,7 +116,7 @@
             android:layout_marginStart="24dp"
             android:layout_marginTop="32dp"
             android:layout_marginEnd="24dp"
-            app:cardCornerRadius="11dp"
+            app:cardCornerRadius="@dimen/card_corner_radius"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/cvScannedToday">
@@ -128,10 +128,9 @@
 
                 <TextView
                     android:id="@+id/tvTitle"
-                    style="@style/Subtitle.Black.Bold"
+                    style="@style/Subtitle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginEnd="24dp"
                     android:text="@string/home_subtitle"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -148,7 +147,7 @@
 
                 <TextView
                     android:id="@+id/tvInfoFirst"
-                    style="@style/Subtitle"
+                    style="@style/Info"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -170,7 +169,7 @@
 
                 <TextView
                     android:id="@+id/tvInfoSecond"
-                    style="@style/Subtitle"
+                    style="@style/Info"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
@@ -190,7 +189,7 @@
 
                 <TextView
                     android:id="@+id/tvInfoThird"
-                    style="@style/Subtitle"
+                    style="@style/Info"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
