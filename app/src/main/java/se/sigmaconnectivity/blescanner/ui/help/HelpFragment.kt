@@ -27,7 +27,7 @@ class HelpFragment : Fragment() {
     }
 
     private fun initView() {
-        vm.userId.observe(this, ::updateUserId)
+        vm.userId.observe(viewLifecycleOwner, ::updateUserId)
     }
 
     private fun updateUserId(userId: String) {

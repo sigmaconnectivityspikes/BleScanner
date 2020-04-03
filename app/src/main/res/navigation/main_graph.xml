@@ -20,4 +20,17 @@
         android:name="se.sigmaconnectivity.blescanner.ui.help.HelpFragment"
         tools:layout="@layout/fragment_help" />
 
+    <action
+        android:id="@+id/action_to_infoDialog"
+        app:destination="@+id/infoDialogFragment" />
+
+    <dialog
+        android:id="@+id/infoDialogFragment"
+        android:name="se.sigmaconnectivity.blescanner.ui.dialog.InfoDialogFragment">
+
+        <argument
+            android:name="messageTextRes"
+            app:argType="reference" />
+    </dialog>
+
 </navigation>

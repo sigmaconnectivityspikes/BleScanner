@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import com.google.android.gms.tasks.OnCompleteListener
@@ -20,10 +21,13 @@ import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.Consts
+import se.sigmaconnectivity.blescanner.MainGraphDirections
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.ActivityMainBinding
 import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
+import se.sigmaconnectivity.blescanner.livedata.observe
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
@@ -32,6 +36,8 @@ class MainActivity : AppCompatActivity() {
         RxPermissions(this)
     }
     private val trackInfectionsUseCase: TrackInfectionsUseCase by inject()
+
+    private val mainViewModel by viewModel<MainViewModel>()
 
     private val compositeDispose = CompositeDisposable()
     private lateinit var binding: ActivityMainBinding
@@ -151,6 +157,11 @@ class MainActivity : AppCompatActivity() {
                 navHostFragment.navController
             )
         }
+        mainViewModel.showInfectionMessage.observe(this, ::navigateToInfectionMessage)
+    }
+
+    private fun navigateToInfectionMessage() {
+        findNavController(R.id.navHostFragment).navigate(MainGraphDirections.actionToInfoDialog(R.string.possible_infection_info))
     }
 
     override fun onDestroy() {
