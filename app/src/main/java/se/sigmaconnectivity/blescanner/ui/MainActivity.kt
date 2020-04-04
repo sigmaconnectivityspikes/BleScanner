@@ -27,7 +27,7 @@ import se.sigmaconnectivity.blescanner.MainGraphDirections
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.ActivityMainBinding
 import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
-import se.sigmaconnectivity.blescanner.livedata.observe
+import se.sigmaconnectivity.blescanner.ui.common.livedata.observe
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {

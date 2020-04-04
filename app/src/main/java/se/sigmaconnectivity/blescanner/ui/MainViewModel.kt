@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.LiveDataReactiveStreams
 import io.reactivex.BackpressureStrategy
 import se.sigmaconnectivity.blescanner.domain.usecase.TrackHasUserHadContactWithInfectedUseCase
-import se.sigmaconnectivity.blescanner.ui.base.BaseViewModel
+import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel
 
 class MainViewModel(
     trackHasUserHadContactWithInfectedUseCase: TrackHasUserHadContactWithInfectedUseCase
