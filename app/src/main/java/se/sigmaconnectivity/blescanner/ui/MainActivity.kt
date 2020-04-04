@@ -123,7 +123,6 @@ class MainActivity : AppCompatActivity() {
                 val token = task.result?.token
                 // Log and toast
                 Timber.d("FCM token $token")
-                Toast.makeText(baseContext, "Fcm token: $token", Toast.LENGTH_SHORT).show()
             })
 
         FirebaseMessaging.getInstance().subscribeToTopic("infections")
@@ -133,7 +132,6 @@ class MainActivity : AppCompatActivity() {
                     msg = "FCM topic subscribe failed"
                 }
                 Timber.d(msg)
-                Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
             }
         trackInfectionsUseCase.execute().subscribe({
             val message = "New infection: $it"

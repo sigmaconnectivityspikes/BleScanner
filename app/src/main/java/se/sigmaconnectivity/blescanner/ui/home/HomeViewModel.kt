@@ -32,18 +32,33 @@ class HomeViewModel(
             }).addTo(disposables)
     }
 
-    fun turnOnLEService() {
+    fun setPhoneNumberHash(hash: String) {
+        userUseCase.saveUserHash(hash)
+            .subscribe({ onUserUpdated() }, {
+                error.value = it.message
+            }).addTo(disposables)
+    }
+
+    private fun onUserUpdated() {
+        turnOnLEService()
+    }
+
+    fun getDeviceMetrics() : String {
+        return "TODO"
+    }
+
+    fun toggleLEService() {
+        if (mutableLEServiceStatus.value == FeatureStatus.ACTIVE)
+            turnOffLEService()
+        else
+            turnOnLEService()
+    }
+
+    private fun turnOnLEService() {
         mutableLEServiceStatus.value = FeatureStatus.ACTIVE
     }
 
-    fun turnOffLEService() {
+    private fun turnOffLEService() {
         mutableLEServiceStatus.value = FeatureStatus.INACTIVE
-    }
-
-    fun setPhoneNumberHash(hash: String) {
-        userUseCase.saveUserHash(hash)
-            .subscribe({ /* do nothing */ }, {
-                error.value = it.message
-            }).addTo(disposables)
     }
 }
