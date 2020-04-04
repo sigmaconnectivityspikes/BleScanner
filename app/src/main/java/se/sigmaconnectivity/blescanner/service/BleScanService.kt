@@ -26,12 +26,16 @@ import org.koin.android.ext.android.inject
 import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
+import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
+import se.sigmaconnectivity.blescanner.data.isValidChecksum
+import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
 import timber.log.Timber
+import java.nio.ByteBuffer
 import java.util.*
 
 class BleScanService() : Service() {
@@ -39,6 +43,7 @@ class BleScanService() : Service() {
     private val rxBleClient: RxBleClient by inject()
     private val contactUseCase: ContactUseCase by inject()
     private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
+
     //TODO: Use usecase for this conversion
     private val hashConverter: HashConverter by inject()
     private val compositeDisposable = CompositeDisposable()
@@ -93,14 +98,26 @@ class BleScanService() : Service() {
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
+            val serviceUUID =  UUID.fromString(
+                Consts.SERVICE_UUID
+            )
+            val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
+            val payload = buffer.long
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addServiceData(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), userUid.toByteArray())
-                .addServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
+                .addServiceUuid(
+                    ParcelUuid(
+                        UUID(
+                        serviceUUID.mostSignificantBits,
+                        payload
+                    )
+                    )
+                )
                 .build()
 
-            Timber.d("Advertise data: $userUid")
+            Timber.d("Advertise data value $data")
+            Timber.d("Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -116,10 +133,14 @@ class BleScanService() : Service() {
     private fun scanLeDevice() {
         val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-            .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             .build()
         val scanFilter = ScanFilter.Builder()
-           .setServiceUuid( ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
+            .setServiceUuid(
+                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), ParcelUuid(
+                    UUID.fromString(Consts.SERVICE_MASK)
+                )
+            )
             .build()
         rxBleClient.scanBleDevices(scanSettings, scanFilter)
             .doOnSubscribe {
@@ -128,16 +149,15 @@ class BleScanService() : Service() {
             }
             .doOnDispose {
                 Timber.d("scanLeDevice disposed")
-
-                scanStatus = FeatureStatus.INACTIVE }
+                scanStatus = FeatureStatus.INACTIVE
+            }
             .subscribe(
                 { scanResult ->
-
                     val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
                     assembleUID(scanResult)?.let {
                         if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
                             processFirstMatch(it, timestampMillis)
-                        } else {
+                        } else if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_MATCH_LOST) {
                             processMatchLost(it, timestampMillis)
                         }
                     } ?: Timber.e("Can not assemble UID")
@@ -169,13 +189,21 @@ class BleScanService() : Service() {
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
-        val resultMap = scanResult.scanRecord.serviceData
-        return resultMap.values.firstOrNull()
+        val results = scanResult.scanRecord.serviceUuids
+        return results?.firstOrNull()
             ?.let {
                 //TODO: change it to chained rx invocation
-                val data = hashConverter.convert(it).blockingGet()
-                Timber.d("data received: $data")
-                data
+                val bytes = ByteBuffer.allocate(8)
+                    .putLong(it.uuid.leastSignificantBits)
+                val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
+                val checksum = bytes.array()[HASH_SIZE_BYTES]
+                if (hashBytes.isValidChecksum(checksum)) {
+                    val data = hashConverter.convert(hashBytes).blockingGet()
+                    Timber.d("data received: $data")
+                    data
+                } else {
+                    null
+                }
             }
     }
 
