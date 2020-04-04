@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BleScanner</string>
+    <string name="app_name">SafeSafe</string>
 
     <!--  Notifications  -->
     <string name="notification_channel_name">KoronaLokalizator notifications</string>
