@@ -26,7 +26,6 @@ import org.koin.android.ext.android.inject
 import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.domain.HashConverter
@@ -98,10 +97,11 @@ class BleScanService() : Service() {
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
-            val serviceUUID =  UUID.fromString(
+            val serviceUUID = UUID.fromString(
                 Consts.SERVICE_UUID
             )
-            val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
+            val userIdByte = userUid.toByteArray()
+            val buffer = ByteBuffer.wrap(userIdByte + userIdByte.toChecksum())
             val payload = buffer.long
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
@@ -109,15 +109,15 @@ class BleScanService() : Service() {
                 .addServiceUuid(
                     ParcelUuid(
                         UUID(
-                        serviceUUID.mostSignificantBits,
-                        payload
-                    )
+                            serviceUUID.mostSignificantBits,
+                            payload
+                        )
                     )
                 )
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
+            Timber.d("Advertise data: ${hashConverter.convert(userIdByte).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -195,7 +195,7 @@ class BleScanService() : Service() {
                 //TODO: change it to chained rx invocation
                 val bytes = ByteBuffer.allocate(8)
                     .putLong(it.uuid.leastSignificantBits)
-                val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
+                val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES)
                 val checksum = bytes.array()[HASH_SIZE_BYTES]
                 if (hashBytes.isValidChecksum(checksum)) {
                     val data = hashConverter.convert(hashBytes).blockingGet()
@@ -238,5 +238,9 @@ class BleScanService() : Service() {
         stopForeground(true)
         stopSelf()
         super.onDestroy()
+    }
+
+    companion object {
+        const val HASH_SIZE_BYTES = 7
     }
 }

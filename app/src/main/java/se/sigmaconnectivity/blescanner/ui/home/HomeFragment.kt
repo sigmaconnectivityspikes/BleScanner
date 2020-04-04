@@ -19,6 +19,7 @@ import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.service.BleScanService
 import se.sigmaconnectivity.blescanner.ui.common.BaseFragment
 
+
 class HomeFragment : BaseFragment() {
 
     private val vm: HomeViewModel by viewModel()

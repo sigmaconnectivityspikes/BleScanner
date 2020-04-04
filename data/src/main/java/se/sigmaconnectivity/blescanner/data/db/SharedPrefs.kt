@@ -12,8 +12,8 @@ class SharedPrefs(private val context: Context) {
         context.getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE)
     }
 
-    fun getUserHash(): String? {
-        val hash = prefs.getString(SHARED_PREFS_HASH, null).toString()
+    fun getUserHash(): String {
+        val hash = prefs.getString(SHARED_PREFS_HASH, "").toString()
         Timber.d("User HASH = $hash")
         return hash
     }

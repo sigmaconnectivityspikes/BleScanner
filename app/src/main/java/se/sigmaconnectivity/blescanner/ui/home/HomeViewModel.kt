@@ -7,6 +7,7 @@ import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCase
 import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel
+import timber.log.Timber
 
 class HomeViewModel(
     private val contactUseCase: ContactUseCase,
@@ -30,6 +31,10 @@ class HomeViewModel(
             }, {
                 error.value = it.message
             }).addTo(disposables)
+        userUseCase.getUserHash()
+            .subscribe({ if (it.isNotEmpty()) turnOnLEService() }, {
+                error.value = it.message
+            }).addTo(disposables)
     }
 
     fun setPhoneNumberHash(hash: String) {
@@ -43,7 +48,7 @@ class HomeViewModel(
         turnOnLEService()
     }
 
-    fun getDeviceMetrics() : String {
+    fun getDeviceMetrics(): String {
         return "TODO"
     }
 
@@ -55,10 +60,12 @@ class HomeViewModel(
     }
 
     private fun turnOnLEService() {
+        Timber.d("Turning on BLE scan")
         mutableLEServiceStatus.value = FeatureStatus.ACTIVE
     }
 
     private fun turnOffLEService() {
+        Timber.d("Turning off BLE scan")
         mutableLEServiceStatus.value = FeatureStatus.INACTIVE
     }
 }
