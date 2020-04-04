@@ -32,6 +32,7 @@ import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
 import timber.log.Timber
+import java.nio.ByteBuffer
 import java.util.*
 
 class BleScanService() : Service() {
@@ -94,22 +95,27 @@ class BleScanService() : Service() {
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
+            val serviceUUID =  UUID.fromString(
+                Consts.SERVICE_UUID
+                    .dropLast(17)
+                    .plus(UUID.randomUUID().toString().takeLast(17))
+            )
+            val buffer = ByteBuffer.wrap(userUid)
+            val payload = buffer.long
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
                 .addServiceUuid(
                     ParcelUuid(
-                        UUID.fromString(
-                            Consts.SERVICE_UUID
-                                .dropLast(17)
-                                .plus(UUID.randomUUID().toString().takeLast(17))
-                        )
+                        UUID(
+                        serviceUUID.mostSignificantBits,
+                        payload
+                    )
                     )
                 )
                 .build()
 
             Timber.d("Advertise data value $data")
-
             Timber.d("Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
@@ -182,11 +188,13 @@ class BleScanService() : Service() {
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
-        val resultMap = scanResult.scanRecord.serviceData
-        return resultMap.values.firstOrNull()
+        val results = scanResult.scanRecord.serviceUuids
+        return results?.firstOrNull()
             ?.let {
                 //TODO: change it to chained rx invocation
-                val data = hashConverter.convert(it).blockingGet()
+                val bytes = ByteBuffer.allocate(8)
+                    .putLong(it.uuid.leastSignificantBits)
+                val data = hashConverter.convert(bytes.array()).blockingGet()
                 Timber.d("data received: $data")
                 data
             }
