@@ -26,6 +26,9 @@ import org.koin.android.ext.android.inject
 import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
+import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
+import se.sigmaconnectivity.blescanner.data.isValidChecksum
+import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
@@ -97,10 +100,8 @@ class BleScanService() : Service() {
         getUserIdHashUseCase.execute().subscribe({ userUid ->
             val serviceUUID =  UUID.fromString(
                 Consts.SERVICE_UUID
-                    .dropLast(17)
-                    .plus(UUID.randomUUID().toString().takeLast(17))
             )
-            val buffer = ByteBuffer.wrap(userUid)
+            val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
             val payload = buffer.long
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
@@ -194,9 +195,15 @@ class BleScanService() : Service() {
                 //TODO: change it to chained rx invocation
                 val bytes = ByteBuffer.allocate(8)
                     .putLong(it.uuid.leastSignificantBits)
-                val data = hashConverter.convert(bytes.array()).blockingGet()
-                Timber.d("data received: $data")
-                data
+                val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
+                val checksum = bytes.array()[HASH_SIZE_BYTES]
+                if (hashBytes.isValidChecksum(checksum)) {
+                    val data = hashConverter.convert(hashBytes).blockingGet()
+                    Timber.d("data received: $data")
+                    data
+                } else {
+                    null
+                }
             }
     }
 
