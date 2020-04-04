@@ -97,7 +97,6 @@ class BleScanService() : Service() {
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
                 .addServiceData(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), userUid)
-                .addServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
                 .build()
 
             Timber.d("Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
@@ -119,7 +118,12 @@ class BleScanService() : Service() {
             .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
-           .setServiceUuid( ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
+        //TODO: There is a problem with filter on some devices, resolve it and restore filter
+           //            .setServiceData(
+            //                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
+            //                ByteBuffer.allocate(8).array(),
+            //                ByteBuffer.allocate(8).array()
+            //            )
             .build()
         rxBleClient.scanBleDevices(scanSettings, scanFilter)
             .doOnSubscribe {
@@ -128,8 +132,11 @@ class BleScanService() : Service() {
             }
             .doOnDispose {
                 Timber.d("scanLeDevice disposed")
-
-                scanStatus = FeatureStatus.INACTIVE }
+                scanStatus = FeatureStatus.INACTIVE
+            }
+            .filter { scanResult ->
+                scanResult.scanRecord.serviceData.containsKey(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
+            }
             .subscribe(
                 { scanResult ->
 
@@ -170,7 +177,7 @@ class BleScanService() : Service() {
 
     private fun assembleUID(scanResult: ScanResult): String? {
         val resultMap = scanResult.scanRecord.serviceData
-        return resultMap.values.firstOrNull()
+        return resultMap[ParcelUuid(UUID.fromString(Consts.SERVICE_UUID))]
             ?.let {
                 //TODO: change it to chained rx invocation
                 val data = hashConverter.convert(it).blockingGet()
