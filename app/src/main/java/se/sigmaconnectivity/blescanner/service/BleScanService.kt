@@ -32,7 +32,6 @@ import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
 import timber.log.Timber
-import java.nio.ByteBuffer
 import java.util.*
 
 class BleScanService() : Service() {
@@ -98,9 +97,10 @@ class BleScanService() : Service() {
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
                 .addServiceData(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), userUid)
+                .addServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
                 .build()
 
-            Timber.d("$data")
+            Timber.d("Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -119,20 +119,20 @@ class BleScanService() : Service() {
             .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
-            .setServiceData(
-                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
-                ByteBuffer.allocate(8).array(),
-                ByteBuffer.allocate(8).array()
-            )
+           .setServiceUuid( ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
             .build()
         rxBleClient.scanBleDevices(scanSettings, scanFilter)
             .doOnSubscribe {
                 Timber.d("scanLeDevice started")
                 scanStatus = FeatureStatus.ACTIVE
             }
-            .doOnDispose { scanStatus = FeatureStatus.INACTIVE }
+            .doOnDispose {
+                Timber.d("scanLeDevice disposed")
+
+                scanStatus = FeatureStatus.INACTIVE }
             .subscribe(
                 { scanResult ->
+
                     val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
                     assembleUID(scanResult)?.let {
                         if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
@@ -169,10 +169,13 @@ class BleScanService() : Service() {
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
-        return scanResult.scanRecord.getServiceData(ParcelUuid.fromString(Consts.SERVICE_UUID))
+        val resultMap = scanResult.scanRecord.serviceData
+        return resultMap.values.firstOrNull()
             ?.let {
                 //TODO: change it to chained rx invocation
-                hashConverter.convert(it).blockingGet()
+                val data = hashConverter.convert(it).blockingGet()
+                Timber.d("data received: $data")
+                data
             }
     }
 
