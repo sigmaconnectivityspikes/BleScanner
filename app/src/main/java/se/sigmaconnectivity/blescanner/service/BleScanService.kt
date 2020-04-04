@@ -98,22 +98,13 @@ class BleScanService() : Service() {
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
-            val serviceUUID =  UUID.fromString(
-                Consts.SERVICE_UUID
-            )
+            val serviceUUID = UUID.fromString(Consts.SERVICE_UUID)
             val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
             val payload = buffer.long
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addServiceUuid(
-                    ParcelUuid(
-                        UUID(
-                        serviceUUID.mostSignificantBits,
-                        payload
-                    )
-                    )
-                )
+                .addServiceUuid(ParcelUuid(UUID(serviceUUID.mostSignificantBits, payload)))
                 .build()
 
             Timber.d("Advertise data value $data")
@@ -133,13 +124,12 @@ class BleScanService() : Service() {
     private fun scanLeDevice() {
         val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
             .setServiceUuid(
-                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), ParcelUuid(
-                    UUID.fromString(Consts.SERVICE_MASK)
-                )
+                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
+                ParcelUuid(UUID.fromString(Consts.SERVICE_MASK))
             )
             .build()
         rxBleClient.scanBleDevices(scanSettings, scanFilter)
@@ -195,7 +185,7 @@ class BleScanService() : Service() {
                 //TODO: change it to chained rx invocation
                 val bytes = ByteBuffer.allocate(8)
                     .putLong(it.uuid.leastSignificantBits)
-                val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
+                val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES)
                 val checksum = bytes.array()[HASH_SIZE_BYTES]
                 if (hashBytes.isValidChecksum(checksum)) {
                     val data = hashConverter.convert(hashBytes).blockingGet()

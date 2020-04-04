@@ -20,7 +20,7 @@ class HomeViewModel(private val contactUseCase: ContactUseCase) : BaseViewModel(
 
     init {
         //TODO add get today scanned devices count
-        contactUseCase.getDevicesCount()
+        contactUseCase.getContactsCount()
             .subscribe({ count ->
                 devicesAmount.value = count.toString()
             }, {

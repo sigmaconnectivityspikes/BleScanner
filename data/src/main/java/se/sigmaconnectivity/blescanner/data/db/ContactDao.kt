@@ -11,7 +11,7 @@ import se.sigmaconnectivity.blescanner.data.entity.Contact
 @Dao
 interface ContactDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertDevice(contact: Contact)
+    fun insertContact(contact: Contact)
 
     @Delete
     fun delete(contact: Contact)
@@ -24,4 +24,7 @@ interface ContactDao {
 
     @Query("SELECT COUNT(*) FROM CONTACTS_TABLE")
     fun count() : Int
+
+    @Query("SELECT * FROM CONTACTS_TABLE")
+    fun getAllContacts(): List<Contact>
 }

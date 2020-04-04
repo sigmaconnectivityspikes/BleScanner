@@ -5,7 +5,7 @@ import se.sigmaconnectivity.blescanner.domain.entity.Entity
 import se.sigmaconnectivity.blescanner.domain.model.InfectionItem
 
 fun Contact.dataToDomain() = Entity.Contact(
-    hash, lastTimeStamp, contactCounter, totalContactTime
+    hash, lastTimeStamp, duration
 )
 
 private const val FCM_DATA_HASH_ID_KEY = "hash"

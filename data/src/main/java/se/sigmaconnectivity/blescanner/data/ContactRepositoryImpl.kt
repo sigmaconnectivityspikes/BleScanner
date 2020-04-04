@@ -29,12 +29,18 @@ class ContactRepositoryImpl(private val contactDao: ContactDao) : ContactReposit
 
     override fun saveContact(contact: Entity.Contact): Completable {
         return Completable.fromAction {
-            Timber.d("saveDevice")
-            contactDao.insertDevice(contact.domainToData())
+            Timber.d("saveContact: $contact")
+            contactDao.insertContact(contact.domainToData())
         }
     }
 
     override fun getDevicesCount(): Single<Int> {
         return Single.fromCallable { contactDao.count() }
+    }
+
+    override fun getAllContacts(): Maybe<List<Entity.Contact>> {
+        return Maybe.fromCallable {
+            contactDao.getAllContacts().map { it.dataToDomain() }
+        }
     }
 }

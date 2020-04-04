@@ -12,6 +12,8 @@ class ContactUseCaseImpl(
     private val contactRepository: ContactRepository
 ) : ContactUseCase {
 
+    private val currentContacts = hashMapOf<String, Long>()
+
     override fun saveContact(contact: Entity.Contact): Completable {
         return contactRepository.saveContact(contact)
             .subscribeOn(Schedulers.io())
@@ -30,31 +32,34 @@ class ContactUseCaseImpl(
             .observeOn(postExecutionThread.scheduler)
     }
 
-    override fun getDevicesCount(): Single<Int> {
+    override fun getContactsCount(): Single<Int> {
         return contactRepository.getDevicesCount()
             .subscribeOn(Schedulers.io())
             .observeOn(postExecutionThread.scheduler)
     }
 
+    override fun getAllContacts(): Single<List<Entity.Contact>> {
+        return contactRepository.getAllContacts()
+            .toSingle(emptyList())
+            .subscribeOn(Schedulers.io())
+            .observeOn(postExecutionThread.scheduler)
+    }
+
     override fun processContactMatch(hash: String, timestamp: Long): Completable {
-        return getContactByHashOrNew(hash)
-            .flatMapCompletable { contact: Entity.Contact ->
-                val contactToUpdate = contact.apply {
-                    lastTimeStamp = timestamp
-                }
-                saveContact(contactToUpdate)
-            }
+        return Completable.fromAction {
+            currentContacts[hash] = timestamp
+        }
     }
 
     override fun processContactLost(hash: String, timestamp: Long): Completable {
-        return getContactByHashOrNew(hash)
-            .flatMapCompletable { contact: Entity.Contact ->
-                val contactToUpdate = contact.apply {
-                    totalContactTime = timestamp - lastTimeStamp
-                    lastTimeStamp = timestamp
-                    contactCounter.inc()
-                }
-                saveContact(contactToUpdate)
-            }
+        return Completable.fromAction {
+            saveContact(
+                Entity.Contact(
+                    hash = hash,
+                    lastTimeStamp = currentContacts[hash]!!,
+                    totalContactTime = timestamp - currentContacts[hash]!!
+                )
+            )
+        }
     }
 }

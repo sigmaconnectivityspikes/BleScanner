@@ -11,4 +11,5 @@ interface ContactRepository {
     fun getDevicesCount(): Single<Int>
     fun getContactByHashOrNew(hash: String): Single<Entity.Contact>
     fun getContactByHash(hash: String): Maybe<Entity.Contact>
+    fun getAllContacts(): Maybe<List<Entity.Contact>>
 }
