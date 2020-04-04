@@ -5,9 +5,13 @@ import androidx.lifecycle.MutableLiveData
 import io.reactivex.rxkotlin.addTo
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCase
 import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel
 
-class HomeViewModel(private val contactUseCase: ContactUseCase) : BaseViewModel() {
+class HomeViewModel(
+    private val contactUseCase: ContactUseCase,
+    private val userUseCase: UserUseCase
+) : BaseViewModel() {
     private val mutableLEServiceStatus = MutableLiveData<FeatureStatus>()
     val leServiceStatusEvent: LiveData<FeatureStatus> = mutableLEServiceStatus
     val devicesAmount = MutableLiveData<String>()
@@ -34,5 +38,12 @@ class HomeViewModel(private val contactUseCase: ContactUseCase) : BaseViewModel(
 
     fun turnOffLEService() {
         mutableLEServiceStatus.value = FeatureStatus.INACTIVE
+    }
+
+    fun setPhoneNumberHash(hash: String) {
+        userUseCase.saveUserHash(hash)
+            .subscribe({ /* do nothing */ }, {
+                error.value = it.message
+            }).addTo(disposables)
     }
 }

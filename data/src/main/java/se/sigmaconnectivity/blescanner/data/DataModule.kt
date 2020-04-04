@@ -7,14 +7,14 @@ import se.sigmaconnectivity.blescanner.data.db.SharedPrefs
 import se.sigmaconnectivity.blescanner.domain.ContactRepository
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.PushNotifier
-import se.sigmaconnectivity.blescanner.domain.UidRepository
+import se.sigmaconnectivity.blescanner.domain.UserRepository
 
 val dataModule = module {
     single { ContactDatabase.buildDataBase(androidApplication()) }
     single { get<ContactDatabase>().contactDao() }
     single<ContactRepository> { ContactRepositoryImpl(get()) }
     single<PushNotifier> { PushNotifierImpl() }
-    single<UidRepository> { UidRepositoryImpl(get()) }
+    single<UserRepository> { UserRepositoryImpl(get()) }
     single { SharedPrefs(androidApplication()) }
 
     factory<HashConverter> { HexHashConverter() }

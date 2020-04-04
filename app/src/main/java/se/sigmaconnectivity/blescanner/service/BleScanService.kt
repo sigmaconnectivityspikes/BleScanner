@@ -96,11 +96,11 @@ class BleScanService() : Service() {
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addServiceData(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), userUid)
+                .addServiceData(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), userUid.toByteArray())
                 .addServiceUuid(ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)))
                 .build()
 
-            Timber.d("Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
+            Timber.d("Advertise data: $userUid")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,

@@ -35,6 +35,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    flavorDimensions "mode"
+    productFlavors {
+        dev {
+            dimension "mode"
+            buildConfigField "String", "WEB", "\"https://safesafe.thecoders.io\""
+        }
+        prod {
+            dimension "mode"
+            buildConfigField "String", "WEB", "\"https://safesafe.app\""
+        }
+    }
 }
 
 ext {
