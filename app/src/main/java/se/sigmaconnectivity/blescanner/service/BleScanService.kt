@@ -108,7 +108,7 @@ class BleScanService() : Service() {
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addManufacturerData(1, buffer.array())
+                .addManufacturerData(Consts.MANUFACTURER_ID, buffer.array())
                 .addServiceUuid(ParcelUuid(serviceUUID))
                 .build()
 
@@ -181,7 +181,7 @@ class BleScanService() : Service() {
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
-        val results = scanResult.scanRecord.getManufacturerSpecificData(1)
+        val results = scanResult.scanRecord.getManufacturerSpecificData(Consts.MANUFACTURER_ID)
         Timber.d("BT- scan result uuid ${scanResult.scanRecord.serviceUuids}")
         return results?.let {
                 //TODO: change it to chained rx invocation
@@ -230,9 +230,5 @@ class BleScanService() : Service() {
         stopForeground(true)
         stopSelf()
         super.onDestroy()
-    }
-
-    companion object {
-        private val serviceMask = UUID(-1, 0)
     }
 }
