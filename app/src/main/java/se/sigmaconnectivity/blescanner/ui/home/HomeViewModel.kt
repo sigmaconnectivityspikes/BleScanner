@@ -2,6 +2,7 @@ package se.sigmaconnectivity.blescanner.ui.home
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.gson.Gson
 import io.reactivex.rxkotlin.addTo
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
@@ -49,7 +50,10 @@ class HomeViewModel(
     }
 
     fun getDeviceMetrics(): String {
-        return "TODO"
+        return Gson().toJson( //TODO gson model
+            contactUseCase.getContacts()
+                .blockingFirst()
+        )
     }
 
     fun toggleLEService() {

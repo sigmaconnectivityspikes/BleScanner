@@ -2,6 +2,7 @@ package se.sigmaconnectivity.blescanner.data
 
 import io.reactivex.Completable
 import io.reactivex.Maybe
+import io.reactivex.Observable
 import io.reactivex.Single
 import se.sigmaconnectivity.blescanner.data.db.ContactDao
 import se.sigmaconnectivity.blescanner.data.mapper.dataToDomain
@@ -11,9 +12,10 @@ import se.sigmaconnectivity.blescanner.domain.entity.Entity
 import timber.log.Timber
 
 class ContactRepositoryImpl(private val contactDao: ContactDao) : ContactRepository {
-    override fun getContactByHashOrNew(hash: String): Single<Entity.Contact> {
+    override fun getContactByHashIfNotLostOrNew(hash: String): Single<Entity.Contact> {
         return Single.fromCallable {
-            contactDao.getContactByHash(hash)?.dataToDomain() ?: Entity.Contact(hash)
+            contactDao.getContactByHashIfNotLost(hash)?.dataToDomain()
+                ?: Entity.Contact(name = hash)
         }
     }
 
@@ -30,11 +32,21 @@ class ContactRepositoryImpl(private val contactDao: ContactDao) : ContactReposit
     override fun saveContact(contact: Entity.Contact): Completable {
         return Completable.fromAction {
             Timber.d("saveDevice")
-            contactDao.insertDevice(contact.domainToData())
+            if (contact.id > 0) {
+                contactDao.update(contact.domainToData())
+            } else {
+                contactDao.insertContact(contact.domainToData())
+            }
         }
     }
 
     override fun getDevicesCount(): Single<Int> {
         return Single.fromCallable { contactDao.count() }
+    }
+
+    override fun getContacts(): Observable<List<Entity.Contact>> {
+        return Observable.fromCallable {
+            contactDao.getContacts().map { it.dataToDomain() }
+        }
     }
 }

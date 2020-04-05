@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import se.sigmaconnectivity.blescanner.data.entity.Contact
 
-@Database(entities = [Contact::class], version = 1)
+@Database(entities = [Contact::class], version = 2)
 abstract class ContactDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
 
@@ -15,6 +15,7 @@ abstract class ContactDatabase : RoomDatabase() {
             context,
             ContactDatabase::class.java,
             "KoronaDatabase"
-        ).build()
+        ).fallbackToDestructiveMigration()
+            .build()
     }
 }
