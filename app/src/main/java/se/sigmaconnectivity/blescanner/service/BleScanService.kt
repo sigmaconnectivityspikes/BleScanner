@@ -38,8 +38,13 @@ import se.sigmaconnectivity.blescanner.ui.MainActivity
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 class BleScanService() : Service() {
+
+    companion object {
+        var isRunning = AtomicBoolean(false)
+    }
 
     private val rxBleClient: RxBleClient by inject()
     private val contactUseCase: ContactUseCase by inject()
@@ -85,14 +90,19 @@ class BleScanService() : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         startForeground(Consts.NOTIFICATION_ID, createNotification())
-        startScan()
+
+        isRunning.set(true)
+
+        // handle the case when service is started multiply times
+        if (scanStatus == FeatureStatus.INACTIVE) {
+            scanLeDevice()
+        }
+
+        if (advertiseStatus == FeatureStatus.INACTIVE) {
+            bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
+        }
 
         return START_NOT_STICKY
-    }
-
-    private fun startScan() {
-        scanLeDevice()
-        bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
     }
 
     private fun startAdv(mBluetoothAdapter: BluetoothAdapter) {
@@ -239,6 +249,7 @@ class BleScanService() : Service() {
     }
 
     override fun onDestroy() {
+        isRunning.set(false)
         compositeDisposable.clear()
         bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
             Timber.d("Advertising stopped")

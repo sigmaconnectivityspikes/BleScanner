@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -29,6 +30,10 @@ import se.sigmaconnectivity.blescanner.ui.common.livedata.observe
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        fun getIntent(context: Context) = Intent(context, MainActivity::class.java)
+    }
 
     private val rxPermissions by lazy {
         RxPermissions(this)
