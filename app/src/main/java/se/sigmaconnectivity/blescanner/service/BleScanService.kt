@@ -16,10 +16,10 @@ import android.os.IBinder
 import android.os.ParcelUuid
 import androidx.core.app.NotificationCompat
 import com.polidea.rxandroidble2.RxBleClient
-import com.polidea.rxandroidble2.scan.ScanCallbackType
 import com.polidea.rxandroidble2.scan.ScanFilter
 import com.polidea.rxandroidble2.scan.ScanResult
 import com.polidea.rxandroidble2.scan.ScanSettings
+import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
@@ -30,6 +30,7 @@ import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.domain.HashConverter
+import se.sigmaconnectivity.blescanner.domain.entity.Entity
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
@@ -37,12 +38,15 @@ import se.sigmaconnectivity.blescanner.ui.MainActivity
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class BleScanService() : Service() {
 
     private val rxBleClient: RxBleClient by inject()
     private val contactUseCase: ContactUseCase by inject()
     private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
+
+    private val bleManager = BLEManager()
 
     //TODO: Use usecase for this conversion
     private val hashConverter: HashConverter by inject()
@@ -103,7 +107,7 @@ class BleScanService() : Service() {
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
-            val serviceUUID =  UUID.fromString(Consts.SERVICE_UUID)
+            val serviceUUID = UUID.fromString(Consts.SERVICE_UUID)
             val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
@@ -135,6 +139,18 @@ class BleScanService() : Service() {
             .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
             .build()
         rxBleClient.scanBleDevices(scanSettings, scanFilter)
+            .takeUntil(
+                Observable.timer(Consts.SCAN_PERIOD_SEC, TimeUnit.SECONDS)
+            ) // scan for a specific amount of time and then unsubscribe to the upstream
+            .doOnComplete {
+                bleManager.getContactLost()
+                .forEach {
+                    processMatchLost(it.key, it.value.lastTimeStamp)
+                }
+            }
+            .repeatWhen { completionObservable ->
+                completionObservable.delay(Consts.SCAN_PERIOD_SEC, TimeUnit.SECONDS)
+            } // when the upstream will complete because of `takeUntil()` wait for the pause time and resubscribe to the upstream
             .doOnSubscribe {
                 Timber.d("scanLeDevice started")
                 scanStatus = FeatureStatus.ACTIVE
@@ -147,10 +163,13 @@ class BleScanService() : Service() {
                 { scanResult ->
                     val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
                     assembleUID(scanResult)?.let {
-                        if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
+//                        if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
+//                            processFirstMatch(it, timestampMillis)
+//                        } else if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_MATCH_LOST) {
+//                            processMatchLost(it, timestampMillis)
+//                        }
+                        if (bleManager.isFirstMatch(it, timestampMillis)) {
                             processFirstMatch(it, timestampMillis)
-                        } else if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_MATCH_LOST) {
-                            processMatchLost(it, timestampMillis)
                         }
                     } ?: Timber.e("Can not assemble UID")
                 },
@@ -184,19 +203,19 @@ class BleScanService() : Service() {
         val results = scanResult.scanRecord.getManufacturerSpecificData(Consts.MANUFACTURER_ID)
         Timber.d("BT- scan result uuid ${scanResult.scanRecord.serviceUuids}")
         return results?.let {
-                //TODO: change it to chained rx invocation
-                val bytes = ByteBuffer.allocate(8)
-                    .put(it)
-                val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
-                val checksum = bytes.array()[HASH_SIZE_BYTES]
-                if (hashBytes.isValidChecksum(checksum)) {
-                    val data = hashConverter.convert(hashBytes).blockingGet()
-                    Timber.d("BT- data received: $data")
-                    data
-                } else {
-                    null
-                }
+            //TODO: change it to chained rx invocation
+            val bytes = ByteBuffer.allocate(8)
+                .put(it)
+            val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES)
+            val checksum = bytes.array()[HASH_SIZE_BYTES]
+            if (hashBytes.isValidChecksum(checksum)) {
+                val data = hashConverter.convert(hashBytes).blockingGet()
+                Timber.d("BT- data received: $data")
+                data
+            } else {
+                null
             }
+        }
     }
 
     private fun updateNotification() {
@@ -230,5 +249,36 @@ class BleScanService() : Service() {
         stopForeground(true)
         stopSelf()
         super.onDestroy()
+    }
+}
+
+class BLEManager() {
+    private val contactTimeMap = mutableMapOf<String, Entity.Contact>()
+
+    private val currentScanMap = mutableMapOf<String, Entity.Contact>()
+
+    fun isFirstMatch(hash: String, timestamp: Long): Boolean {
+        val result = contactTimeMap[hash] == null && currentScanMap[hash] == null
+        currentScanMap[hash]?.let {
+            Timber.d("Contact already scanned")
+        } ?: currentScanMap.put(
+            hash, Entity.Contact(
+                hash,
+                timestamp,
+                0
+            )
+        )
+        return result
+    }
+
+    fun getContactLost(): MutableMap<String, Entity.Contact> {
+        val contactLostMap = mutableMapOf<String, Entity.Contact>()
+        contactTimeMap.forEach {
+            currentScanMap[it.key] ?: contactLostMap.put(it.key, it.value)
+        }
+        contactTimeMap.clear()
+        contactTimeMap.putAll(currentScanMap)
+        currentScanMap.clear()
+        return contactLostMap
     }
 }

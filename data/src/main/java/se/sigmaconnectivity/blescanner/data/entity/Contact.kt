@@ -9,5 +9,5 @@ data class Contact(
     val hash: String,
     @ColumnInfo(name = "last_timestamp") val lastTimeStamp: Long,
     @ColumnInfo(name = "duration") val duration: Long,
-    @PrimaryKey(autoGenerate = true) val id: Long? = null
+    @PrimaryKey(autoGenerate = true) val id: Long = 0
 )

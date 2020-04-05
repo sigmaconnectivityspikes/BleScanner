@@ -28,8 +28,8 @@ class ContactRepositoryImpl(private val contactDao: ContactDao) : ContactReposit
     }
 
     override fun saveContact(contact: Entity.Contact): Completable {
+        Timber.d("saveContact: $contact")
         return Completable.fromAction {
-            Timber.d("saveContact: $contact")
             contactDao.insertContact(contact.domainToData())
         }
     }
