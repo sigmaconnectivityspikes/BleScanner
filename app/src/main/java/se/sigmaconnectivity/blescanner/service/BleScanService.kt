@@ -127,7 +127,7 @@ class BleScanService() : Service() {
     }
 
     private fun scanLeDevice() {
-        val scanSettings = ScanSettings.Builder()
+        val scanSettingsAll = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
             .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             .build()
@@ -138,7 +138,7 @@ class BleScanService() : Service() {
         val scanFilter = ScanFilter.Builder()
             .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
             .build()
-        rxBleClient.scanBleDevices(scanSettings, scanFilter)
+        rxBleClient.scanBleDevices(scanSettingsAll, scanFilter)
             .mergeWith(rxBleClient.scanBleDevices(scanSettingsLost, scanFilter))
             .doOnSubscribe {
                 Timber.d("scanLeDevice started")
