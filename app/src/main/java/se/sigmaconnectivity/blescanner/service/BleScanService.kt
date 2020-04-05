@@ -96,7 +96,7 @@ class BleScanService() : Service() {
 
     private fun startAdv(mBluetoothAdapter: BluetoothAdapter) {
         val settings = AdvertiseSettings.Builder()
-            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
             .setConnectable(false)
             .setTimeout(0)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
@@ -128,7 +128,7 @@ class BleScanService() : Service() {
 
     private fun scanLeDevice() {
         val scanSettings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
             .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             .build()
         val scanFilter = ScanFilter.Builder()
