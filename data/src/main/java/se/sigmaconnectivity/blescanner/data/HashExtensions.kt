@@ -2,6 +2,9 @@ package se.sigmaconnectivity.blescanner.data
 
 import java.security.MessageDigest
 
+
+const val HASH_SIZE_BYTES = 7
+
 fun String.toHash(): ByteArray {
     val md = MessageDigest.getInstance("SHA-1")
     md.update(toByteArray(Charsets.UTF_8))

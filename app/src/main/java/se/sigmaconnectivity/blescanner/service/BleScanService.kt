@@ -29,6 +29,7 @@ import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
+import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
@@ -104,7 +105,8 @@ class BleScanService() : Service() {
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
             val serviceUUID =  UUID.fromString(Consts.SERVICE_UUID)
-            val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
+            val userIdHash = userUid.toHash()
+            val buffer = ByteBuffer.wrap(userIdHash + userIdHash.toChecksum())
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
@@ -113,7 +115,7 @@ class BleScanService() : Service() {
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("BT- Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
+            Timber.d("BT- Advertise data: ${hashConverter.convert(userIdHash).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
