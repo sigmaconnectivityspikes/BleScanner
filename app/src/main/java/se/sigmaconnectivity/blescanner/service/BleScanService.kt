@@ -67,8 +67,13 @@ class BleScanService() : Service() {
 
         override fun onStartFailure(errorCode: Int) {
             Timber.d("Peripheral advertising failed: $errorCode")
-            advertiseStatus = FeatureStatus.INACTIVE
-            updateNotification()
+            if (errorCode == ADVERTISE_FAILED_ALREADY_STARTED) {
+                advertiseStatus = FeatureStatus.ACTIVE
+                updateNotification()
+            } else {
+                advertiseStatus = FeatureStatus.INACTIVE
+                updateNotification()
+            }
         }
     }
 
@@ -98,26 +103,17 @@ class BleScanService() : Service() {
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
-            val serviceUUID =  UUID.fromString(
-                Consts.SERVICE_UUID
-            )
+            val serviceUUID =  UUID.fromString(Consts.SERVICE_UUID)
             val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
-            val payload = buffer.long
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addServiceUuid(
-                    ParcelUuid(
-                        UUID(
-                        serviceUUID.mostSignificantBits,
-                        payload
-                    )
-                    )
-                )
+                .addManufacturerData(Consts.MANUFACTURER_ID, buffer.array())
+                .addServiceUuid(ParcelUuid(serviceUUID))
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
+            Timber.d("BT- Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -136,11 +132,7 @@ class BleScanService() : Service() {
             .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             .build()
         val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(
-                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), ParcelUuid(
-                    UUID.fromString(Consts.SERVICE_MASK)
-                )
-            )
+            .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
             .build()
         rxBleClient.scanBleDevices(scanSettings, scanFilter)
             .doOnSubscribe {
@@ -189,17 +181,17 @@ class BleScanService() : Service() {
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
-        val results = scanResult.scanRecord.serviceUuids
-        return results?.firstOrNull()
-            ?.let {
+        val results = scanResult.scanRecord.getManufacturerSpecificData(Consts.MANUFACTURER_ID)
+        Timber.d("BT- scan result uuid ${scanResult.scanRecord.serviceUuids}")
+        return results?.let {
                 //TODO: change it to chained rx invocation
                 val bytes = ByteBuffer.allocate(8)
-                    .putLong(it.uuid.leastSignificantBits)
+                    .put(it)
                 val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
                 val checksum = bytes.array()[HASH_SIZE_BYTES]
                 if (hashBytes.isValidChecksum(checksum)) {
                     val data = hashConverter.convert(hashBytes).blockingGet()
-                    Timber.d("data received: $data")
+                    Timber.d("BT- data received: $data")
                     data
                 } else {
                     null
