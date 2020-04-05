@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.gson.Gson
 import io.reactivex.rxkotlin.addTo
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCase
@@ -59,7 +60,10 @@ class HomeViewModel(
     }
 
     fun getDeviceMetrics(): String {
-        return "TODO"
+        return Gson().toJson( //TODO gson model
+            contactUseCase.getContacts()
+                .blockingFirst()
+        )
     }
 
     fun toggleBleService() {

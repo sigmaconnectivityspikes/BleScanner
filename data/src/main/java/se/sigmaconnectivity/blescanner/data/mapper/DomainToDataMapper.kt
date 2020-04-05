@@ -4,5 +4,5 @@ import se.sigmaconnectivity.blescanner.data.entity.Contact
 import se.sigmaconnectivity.blescanner.domain.entity.Entity
 
 fun Entity.Contact.domainToData() = Contact(
-    hash, lastTimeStamp, contactCounter, totalContactTime
+    id, name, status, timestamp, lostTimestamp, duration
 )

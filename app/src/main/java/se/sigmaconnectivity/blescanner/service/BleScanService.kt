@@ -162,7 +162,7 @@ class BleScanService() : Service() {
             }
             .subscribe(
                 { scanResult ->
-                    val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
+                    val timestampMillis = System.currentTimeMillis() //TODO time from scanResult
                     Timber.d("-BT- found scanResult ${scanResult.scanRecord.serviceUuids} callbackType ${scanResult.callbackType}")
                     assembleUID(scanResult)?.let {
                         if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_ALL_MATCHES) {

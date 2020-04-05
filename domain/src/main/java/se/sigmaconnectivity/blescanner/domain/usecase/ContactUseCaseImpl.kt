@@ -1,10 +1,13 @@
 package se.sigmaconnectivity.blescanner.domain.usecase
 
 import io.reactivex.Completable
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import se.sigmaconnectivity.blescanner.domain.ContactRepository
 import se.sigmaconnectivity.blescanner.domain.entity.Entity
+import se.sigmaconnectivity.blescanner.domain.entity.STATUS_LOST
+import se.sigmaconnectivity.blescanner.domain.entity.STATUS_MATCHED
 import se.sigmaconnectivity.blescanner.domain.executor.PostExecutionThread
 
 class ContactUseCaseImpl(
@@ -24,8 +27,8 @@ class ContactUseCaseImpl(
             .observeOn(postExecutionThread.scheduler)
     }
 
-    override fun getContactByHashOrNew(hash: String): Single<Entity.Contact> {
-        return contactRepository.getContactByHashOrNew(hash)
+    override fun getContactByHashIfNotLostOrNew(hash: String): Single<Entity.Contact> {
+        return contactRepository.getContactByHashIfNotLostOrNew(hash)
             .subscribeOn(Schedulers.io())
             .observeOn(postExecutionThread.scheduler)
     }
@@ -36,23 +39,31 @@ class ContactUseCaseImpl(
             .observeOn(postExecutionThread.scheduler)
     }
 
+    override fun getContacts(): Observable<List<Entity.Contact>> {
+        return contactRepository.getContacts()
+            .subscribeOn(Schedulers.io())
+            .observeOn(postExecutionThread.scheduler)
+    }
+
     override fun processContactMatch(hash: String, timestamp: Long): Completable {
-        return getContactByHashOrNew(hash)
+        return getContactByHashIfNotLostOrNew(hash)
             .flatMapCompletable { contact: Entity.Contact ->
                 val contactToUpdate = contact.apply {
-                    lastTimeStamp = timestamp
+                    status = STATUS_MATCHED
+                    this.timestamp = if (this.timestamp > 0) this.timestamp else timestamp
+                    lostTimestamp = timestamp
                 }
                 saveContact(contactToUpdate)
             }
     }
 
     override fun processContactLost(hash: String, timestamp: Long): Completable {
-        return getContactByHashOrNew(hash)
+        return getContactByHashIfNotLostOrNew(hash)
             .flatMapCompletable { contact: Entity.Contact ->
                 val contactToUpdate = contact.apply {
-                    totalContactTime = timestamp - lastTimeStamp
-                    lastTimeStamp = timestamp
-                    contactCounter.inc()
+                    status = STATUS_LOST
+                    lostTimestamp = timestamp
+                    duration = (lostTimestamp - this.timestamp) / 1000
                 }
                 saveContact(contactToUpdate)
             }
