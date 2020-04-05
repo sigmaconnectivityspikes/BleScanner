@@ -197,7 +197,7 @@ class BleScanService() : Service() {
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
-        val results = scanResult.scanRecord.getManufacturerSpecificData(1)
+        val results = scanResult.scanRecord.getManufacturerSpecificData(Consts.MANUFACTURER_ID)
         Timber.d("BT- scan result uuid ${scanResult.scanRecord.serviceUuids}")
         return results?.let {
             //TODO: change it to chained rx invocation
