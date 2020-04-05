@@ -139,14 +139,19 @@ class BleScanService() : Service() {
     }
 
     private fun scanLeDevice() {
-        val scanSettings = ScanSettings.Builder()
+        val scanSettingsAll = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
             .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+            .build()
+        val scanSettingsLost = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
             .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
             .build()
-        rxBleClient.scanBleDevices(scanSettings, scanFilter)
+        rxBleClient.scanBleDevices(scanSettingsAll, scanFilter)
+            .mergeWith(rxBleClient.scanBleDevices(scanSettingsLost, scanFilter))
             .doOnSubscribe {
                 Timber.d("scanLeDevice started")
                 scanStatus = FeatureStatus.ACTIVE
@@ -158,9 +163,10 @@ class BleScanService() : Service() {
             .subscribe(
                 { scanResult ->
                     val timestampMillis = Duration.ofNanos(scanResult.timestampNanos).toMillis()
+                    Timber.d("-BT- found scanResult ${scanResult.scanRecord.serviceUuids} callbackType ${scanResult.callbackType}")
                     assembleUID(scanResult)?.let {
-                        if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_FIRST_MATCH) {
-                            processFirstMatch(it, timestampMillis)
+                        if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_ALL_MATCHES) {
+                            processMatch(it, timestampMillis)
                         } else if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_MATCH_LOST) {
                             processMatchLost(it, timestampMillis)
                         }
@@ -172,18 +178,26 @@ class BleScanService() : Service() {
             ).addTo(compositeDisposable)
     }
 
-    private fun processFirstMatch(contactHash: String, timestamp: Long) {
-        Timber.d("CALLBACK_TYPE_FIRST_MATCH: $contactHash")
-        contactUseCase.processContactMatch(contactHash, timestamp)
-            .subscribe({
-                Timber.d("processContactMatch() SUCCESS")
-            }, {
-                Timber.e(it, "processContactMatch() FAILED")
-            }).addTo(compositeDisposable)
+    private val existingMatchingHashes = HashSet<String>()
+
+    private fun processMatch(contactHash: String, timestamp: Long) {
+        Timber.d("-BT- checking match: $contactHash in $existingMatchingHashes")
+        if (!existingMatchingHashes.contains(contactHash)) {
+            Timber.d("-BT- found match: $contactHash")
+            existingMatchingHashes.add(contactHash)
+            Timber.d("CALLBACK_TYPE_FIRST_MATCH: $contactHash")
+            contactUseCase.processContactMatch(contactHash, timestamp)
+                .subscribe({
+                    Timber.d("processContactMatch() SUCCESS")
+                }, {
+                    Timber.e(it, "processContactMatch() FAILED")
+                }).addTo(compositeDisposable)
+        }
     }
 
     private fun processMatchLost(contactHash: String, timestamp: Long) {
         Timber.d("CALLBACK_TYPE_MATCH_LOST: $contactHash")
+        existingMatchingHashes.remove(contactHash)
         contactUseCase.processContactLost(contactHash, timestamp)
             .subscribe({
                 Timber.d("processContactLost() SUCCESS")
@@ -196,19 +210,19 @@ class BleScanService() : Service() {
         val results = scanResult.scanRecord.getManufacturerSpecificData(Consts.MANUFACTURER_ID)
         Timber.d("BT- scan result uuid ${scanResult.scanRecord.serviceUuids}")
         return results?.let {
-                //TODO: change it to chained rx invocation
-                val bytes = ByteBuffer.allocate(8)
-                    .put(it)
-                val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
-                val checksum = bytes.array()[HASH_SIZE_BYTES]
-                if (hashBytes.isValidChecksum(checksum)) {
-                    val data = hashConverter.convert(hashBytes).blockingGet()
-                    Timber.d("BT- data received: $data")
-                    data
-                } else {
-                    null
-                }
+            //TODO: change it to chained rx invocation
+            val bytes = ByteBuffer.allocate(8)
+                .put(it)
+            val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
+            val checksum = bytes.array()[HASH_SIZE_BYTES]
+            if (hashBytes.isValidChecksum(checksum)) {
+                val data = hashConverter.convert(hashBytes).blockingGet()
+                Timber.d("BT- data received: $data")
+                data
+            } else {
+                null
             }
+        }
     }
 
     private fun updateNotification() {
