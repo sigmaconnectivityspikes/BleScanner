@@ -14,16 +14,17 @@ val appModule = module {
     single { RxBleClient.create(androidApplication()) }
     factory<PostExecutionThread> { se.sigmaconnectivity.blescanner.executor.PostExecutionThread() }
     factory<ContactUseCase> { ContactUseCaseImpl(get(), get()) }
+    factory<UserUseCase> { UserUseCaseImpl(get(), get()) }
     factory { TrackInfectionsUseCase(get(), get()) }
     factory { NotifyInfectionUseCase(get(), get()) }
     factory { GetUserIdHashUseCase(get(), get()) }
-    factory { GetHumanReadableUserIdUseCase(get(), get(), get()) }
+    factory { GetHumanReadableUserIdUseCase(get(), get()) }
     factory { HasUserHadContactWithInfectedUseCase(get(), get()) }
     factory { TrackHasUserHadContactWithInfectedUseCase(get(), get(), get()) }
 }
 
 val viewModelModule = module {
-    viewModel { HomeViewModel(get()) }
+    viewModel { HomeViewModel(get(), get()) }
     viewModel  { HelpViewModel(get()) }
     viewModel  { MainViewModel(get()) }
 }

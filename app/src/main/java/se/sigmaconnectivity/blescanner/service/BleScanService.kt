@@ -29,6 +29,7 @@ import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
+import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
@@ -113,7 +114,7 @@ class BleScanService() : Service() {
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("BT- Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
+            Timber.d("BT- Advertise data: ${hashConverter.convert(userIdHash).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,

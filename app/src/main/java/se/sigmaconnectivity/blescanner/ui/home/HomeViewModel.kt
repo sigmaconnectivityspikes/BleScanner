@@ -5,9 +5,14 @@ import androidx.lifecycle.MutableLiveData
 import io.reactivex.rxkotlin.addTo
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCase
 import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel
+import timber.log.Timber
 
-class HomeViewModel(private val contactUseCase: ContactUseCase) : BaseViewModel() {
+class HomeViewModel(
+    private val contactUseCase: ContactUseCase,
+    private val userUseCase: UserUseCase
+) : BaseViewModel() {
     private val mutableLEServiceStatus = MutableLiveData<FeatureStatus>()
     val leServiceStatusEvent: LiveData<FeatureStatus> = mutableLEServiceStatus
     val devicesAmount = MutableLiveData<String>()
@@ -26,13 +31,41 @@ class HomeViewModel(private val contactUseCase: ContactUseCase) : BaseViewModel(
             }, {
                 error.value = it.message
             }).addTo(disposables)
+        userUseCase.getUserHash()
+            .subscribe({ if (it.isNotEmpty()) turnOnLEService() }, {
+                error.value = it.message
+            }).addTo(disposables)
     }
 
-    fun turnOnLEService() {
+    fun setPhoneNumberHash(hash: String) {
+        userUseCase.saveUserHash(hash)
+            .subscribe({ onUserUpdated() }, {
+                error.value = it.message
+            }).addTo(disposables)
+    }
+
+    private fun onUserUpdated() {
+        turnOnLEService()
+    }
+
+    fun getDeviceMetrics(): String {
+        return "TODO"
+    }
+
+    fun toggleLEService() {
+        if (mutableLEServiceStatus.value == FeatureStatus.ACTIVE)
+            turnOffLEService()
+        else
+            turnOnLEService()
+    }
+
+    private fun turnOnLEService() {
+        Timber.d("Turning on BLE scan")
         mutableLEServiceStatus.value = FeatureStatus.ACTIVE
     }
 
-    fun turnOffLEService() {
+    private fun turnOffLEService() {
+        Timber.d("Turning off BLE scan")
         mutableLEServiceStatus.value = FeatureStatus.INACTIVE
     }
 }
