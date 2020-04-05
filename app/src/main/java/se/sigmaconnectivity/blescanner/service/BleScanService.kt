@@ -26,8 +26,10 @@ import org.koin.android.ext.android.inject
 import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
+import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
+import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
@@ -100,8 +102,8 @@ class BleScanService() : Service() {
             val serviceUUID = UUID.fromString(
                 Consts.SERVICE_UUID
             )
-            val userIdByte = userUid.toByteArray()
-            val buffer = ByteBuffer.wrap(userIdByte + userIdByte.toChecksum())
+            val userIdHash = userUid.toHash()
+            val buffer = ByteBuffer.wrap(userIdHash + userIdHash.toChecksum())
             val payload = buffer.long
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
@@ -117,7 +119,7 @@ class BleScanService() : Service() {
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("Advertise data: ${hashConverter.convert(userIdByte).blockingGet()}")
+            Timber.d("Advertise data: ${hashConverter.convert(userIdHash).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -238,9 +240,5 @@ class BleScanService() : Service() {
         stopForeground(true)
         stopSelf()
         super.onDestroy()
-    }
-
-    companion object {
-        const val HASH_SIZE_BYTES = 7
     }
 }
