@@ -67,8 +67,13 @@ class BleScanService() : Service() {
 
         override fun onStartFailure(errorCode: Int) {
             Timber.d("Peripheral advertising failed: $errorCode")
-            advertiseStatus = FeatureStatus.INACTIVE
-            updateNotification()
+            if (errorCode == ADVERTISE_FAILED_ALREADY_STARTED) {
+                advertiseStatus = FeatureStatus.ACTIVE
+                updateNotification()
+            } else {
+                advertiseStatus = FeatureStatus.INACTIVE
+                updateNotification()
+            }
         }
     }
 
@@ -91,29 +96,20 @@ class BleScanService() : Service() {
 
     private fun startAdv(mBluetoothAdapter: BluetoothAdapter) {
         val settings = AdvertiseSettings.Builder()
-            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setConnectable(false)
             .setTimeout(0)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
-            val serviceUUID =  UUID.fromString(
-                Consts.SERVICE_UUID
-            )
+            val serviceUUID =  UUID.fromString(Consts.SERVICE_UUID)
             val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
-            val payload = buffer.long
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addServiceUuid(
-                    ParcelUuid(
-                        UUID(
-                        serviceUUID.mostSignificantBits,
-                        payload
-                    )
-                    )
-                )
+                .addManufacturerData(1, buffer.array())
+                .addServiceUuid(ParcelUuid(serviceUUID))
                 .build()
 
             Timber.d("Advertise data value $data")
@@ -132,14 +128,11 @@ class BleScanService() : Service() {
 
     private fun scanLeDevice() {
         val scanSettings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(
-                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
-                ParcelUuid(serviceMask)
-            )
+            .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
             .build()
         rxBleClient.scanBleDevices(scanSettings, scanFilter)
             .doOnSubscribe {
@@ -188,12 +181,11 @@ class BleScanService() : Service() {
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
-        val results = scanResult.scanRecord.serviceUuids
-        return results?.firstOrNull()
-            ?.let {
+        val results = scanResult.scanRecord.getManufacturerSpecificData(1)
+        return results?.let {
                 //TODO: change it to chained rx invocation
                 val bytes = ByteBuffer.allocate(8)
-                    .putLong(it.uuid.leastSignificantBits)
+                    .put(it)
                 val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
                 val checksum = bytes.array()[HASH_SIZE_BYTES]
                 if (hashBytes.isValidChecksum(checksum)) {
