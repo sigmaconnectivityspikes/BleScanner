@@ -113,7 +113,7 @@ class BleScanService() : Service() {
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
+            Timber.d("BT- Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -182,6 +182,7 @@ class BleScanService() : Service() {
 
     private fun assembleUID(scanResult: ScanResult): String? {
         val results = scanResult.scanRecord.getManufacturerSpecificData(1)
+        Timber.d("BT- scan result uuid ${scanResult.scanRecord.serviceUuids}")
         return results?.let {
                 //TODO: change it to chained rx invocation
                 val bytes = ByteBuffer.allocate(8)
@@ -190,7 +191,7 @@ class BleScanService() : Service() {
                 val checksum = bytes.array()[HASH_SIZE_BYTES]
                 if (hashBytes.isValidChecksum(checksum)) {
                     val data = hashConverter.convert(hashBytes).blockingGet()
-                    Timber.d("data received: $data")
+                    Timber.d("BT- data received: $data")
                     data
                 } else {
                     null
