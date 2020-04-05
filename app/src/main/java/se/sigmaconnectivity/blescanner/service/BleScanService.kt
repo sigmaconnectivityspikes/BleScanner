@@ -129,7 +129,7 @@ class BleScanService() : Service() {
     private fun scanLeDevice() {
         val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST)
+            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
             .build()
         val scanFilter = ScanFilter.Builder()
             .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
