@@ -8,6 +8,13 @@ fun String.toHash(): ByteArray {
     return md.digest().sliceArray(0 until HASH_SIZE_BYTES)
 }
 
-fun ByteArray.toChecksum() = sum().toByte()
+fun ByteArray.toChecksum(): Byte {
+    var sum = 0
+    forEach {
+        sum = sum shl 1
+        sum += it
+    }
+    return sum.toByte()
+}
 
 fun ByteArray.isValidChecksum(checksum: Byte): Boolean = toChecksum() == checksum
