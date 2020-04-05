@@ -105,7 +105,8 @@ class BleScanService() : Service() {
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
             val serviceUUID =  UUID.fromString(Consts.SERVICE_UUID)
-            val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
+            val userIdHash = userUid.toHash()
+            val buffer = ByteBuffer.wrap(userIdHash + userIdHash.toChecksum())
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
