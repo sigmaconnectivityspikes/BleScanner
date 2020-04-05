@@ -1,6 +1,7 @@
 package se.sigmaconnectivity.blescanner.ui.home
 
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
-import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import com.google.android.material.snackbar.Snackbar
@@ -16,19 +16,15 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.BuildConfig
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.FragmentHomeBinding
-import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.service.BleScanService
 import se.sigmaconnectivity.blescanner.ui.common.BaseFragment
+import se.sigmaconnectivity.blescanner.ui.home.HomeViewModel.ErrorEvent
 
 
 class HomeFragment : BaseFragment() {
 
     private val vm: HomeViewModel by viewModel()
     private lateinit var binding: FragmentHomeBinding
-
-    private val serviceIntent: Intent by lazy {
-        Intent(context, BleScanService::class.java)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -64,7 +60,7 @@ class HomeFragment : BaseFragment() {
             loadUrl(BuildConfig.WEB)
         }
         binding.webView.setOnLongClickListener {
-            vm.toggleLEService()
+            vm.toggleBleService()
             false
         }
         requireActivity().onBackPressedDispatcher.addCallback(
@@ -81,16 +77,25 @@ class HomeFragment : BaseFragment() {
     }
 
     private fun registerObservers() {
-        vm.leServiceStatusEvent.observe(viewLifecycleOwner, Observer { featureStatus ->
-            if (featureStatus == FeatureStatus.ACTIVE) {
-                context?.let { ContextCompat.startForegroundService(it, serviceIntent) }
-            } else {
-                context?.stopService(serviceIntent)
+        vm.errorEvent.observe(viewLifecycleOwner, Observer { errorEvent ->
+            when (errorEvent) {
+                is ErrorEvent.BluetoothNotEnabled -> {
+                    requestBluetooth()
+                }
+                is ErrorEvent.Unknown -> {
+                    view?.let { Snackbar.make(it, errorEvent.message, Snackbar.LENGTH_SHORT) }
+                }
             }
         })
-        vm.errorEvent.observe(viewLifecycleOwner, Observer { errorMessage ->
-            view?.let { Snackbar.make(it, errorMessage, Snackbar.LENGTH_SHORT) }
-        })
+    }
+
+    /**
+     * If Bluetooth will be enabled then [BluetoothAdapterStatusReceiver] will automatically start
+     * the [BleScanService]
+     */
+    private fun requestBluetooth() {
+        val requestBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+        startActivity(requestBluetoothIntent)
     }
 
 }
