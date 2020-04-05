@@ -137,9 +137,8 @@ class BleScanService() : Service() {
             .build()
         val scanFilter = ScanFilter.Builder()
             .setServiceUuid(
-                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)), ParcelUuid(
-                    UUID.fromString(Consts.SERVICE_MASK)
-                )
+                ParcelUuid(UUID.fromString(Consts.SERVICE_UUID)),
+                ParcelUuid(serviceMask)
             )
             .build()
         rxBleClient.scanBleDevices(scanSettings, scanFilter)
@@ -238,5 +237,9 @@ class BleScanService() : Service() {
         stopForeground(true)
         stopSelf()
         super.onDestroy()
+    }
+
+    companion object {
+        private val serviceMask = UUID(-1, 0)
     }
 }
