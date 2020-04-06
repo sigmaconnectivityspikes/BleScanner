@@ -1,22 +1,38 @@
 package se.sigmaconnectivity.blescanner.ui.home
 
+import android.content.Context
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.google.gson.Gson
 import io.reactivex.rxkotlin.addTo
-import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForBluetoothStatusUseCase
+import se.sigmaconnectivity.blescanner.extensions.isBluetoothEnabled
+import se.sigmaconnectivity.blescanner.service.BleScanService
 import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel
+import timber.log.Timber
 
-class HomeViewModel(private val contactUseCase: ContactUseCase) : BaseViewModel() {
-    private val mutableLEServiceStatus = MutableLiveData<FeatureStatus>()
-    val leServiceStatusEvent: LiveData<FeatureStatus> = mutableLEServiceStatus
-    val devicesAmount = MutableLiveData<String>()
+class HomeViewModel(
+    private val contactUseCase: ContactUseCase,
+    private val userUseCase: UserUseCase,
+    private val appContext: Context
+) : BaseViewModel() {
+
+    private val serviceIntent: Intent by lazy {
+        Intent(appContext, BleScanService::class.java)
+    }
+
+    private val devicesAmount = MutableLiveData<String>()
 
     //TODO implement last update time
-    val lastUpdateHour = MutableLiveData<String>().apply { value = "14:55" }
-    val lastUpdateDate = MutableLiveData<String>().apply { value = "Mar 20" }
-    private val error = MutableLiveData<String>()
-    val errorEvent: LiveData<String> = error
+    private val lastUpdateHour = MutableLiveData<String>().apply { value = "14:55" }
+    private val lastUpdateDate = MutableLiveData<String>().apply { value = "Mar 20" }
+    private val error = MutableLiveData<ErrorEvent>()
+
+    val errorEvent: LiveData<ErrorEvent> = error
 
     init {
         //TODO add get today scanned devices count
@@ -24,15 +40,56 @@ class HomeViewModel(private val contactUseCase: ContactUseCase) : BaseViewModel(
             .subscribe({ count ->
                 devicesAmount.value = count.toString()
             }, {
-                error.value = it.message
+                error.value = ErrorEvent.Unknown(it.message ?: "Error")
+            }).addTo(disposables)
+        userUseCase.getUserHash()
+            .subscribe({ if (it.isNotEmpty()) turnOnBleService() }, {
+                error.value = ErrorEvent.Unknown(it.message ?: "Error")
             }).addTo(disposables)
     }
 
-    fun turnOnLEService() {
-        mutableLEServiceStatus.value = FeatureStatus.ACTIVE
+    fun setPhoneNumberHash(hash: String) {
+        userUseCase.saveUserHash(hash)
+            .subscribe({ onUserUpdated() }, {
+                error.value = ErrorEvent.Unknown(it.message ?: "Error")
+            }).addTo(disposables)
     }
 
-    fun turnOffLEService() {
-        mutableLEServiceStatus.value = FeatureStatus.INACTIVE
+    private fun onUserUpdated() {
+        turnOnBleService()
+    }
+
+    fun getDeviceMetrics(): String {
+        return Gson().toJson( //TODO gson model
+            contactUseCase.getContacts()
+                .blockingFirst()
+        )
+    }
+
+    fun toggleBleService() {
+        if (BleScanService.isRunning.get()) {
+            turnOffBleService()
+        } else {
+            turnOnBleService()
+        }
+    }
+
+    private fun turnOnBleService() {
+        Timber.d("Turning on BLE scan")
+        if (appContext.isBluetoothEnabled()) {
+            ContextCompat.startForegroundService(appContext, serviceIntent)
+        } else {
+            error.value = ErrorEvent.BluetoothNotEnabled
+        }
+    }
+
+    private fun turnOffBleService() {
+        Timber.d("Turning off BLE scan")
+        appContext.stopService(serviceIntent)
+    }
+
+    sealed class ErrorEvent {
+        object BluetoothNotEnabled : ErrorEvent()
+        data class Unknown(val message: String) : ErrorEvent()
     }
 }

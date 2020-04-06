@@ -15,6 +15,7 @@ abstract class ContactDatabase : RoomDatabase() {
             context,
             ContactDatabase::class.java,
             "KoronaDatabase"
-        ).build()
+        ).fallbackToDestructiveMigration()
+            .build()
     }
 }

@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -12,8 +13,6 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.NavigationUI
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessaging
@@ -31,6 +30,10 @@ import se.sigmaconnectivity.blescanner.ui.common.livedata.observe
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        fun getIntent(context: Context) = Intent(context, MainActivity::class.java)
+    }
 
     private val rxPermissions by lazy {
         RxPermissions(this)
@@ -125,7 +128,6 @@ class MainActivity : AppCompatActivity() {
                 val token = task.result?.token
                 // Log and toast
                 Timber.d("FCM token $token")
-                Toast.makeText(baseContext, "Fcm token: $token", Toast.LENGTH_SHORT).show()
             })
 
         FirebaseMessaging.getInstance().subscribeToTopic("infections")
@@ -135,7 +137,6 @@ class MainActivity : AppCompatActivity() {
                     msg = "FCM topic subscribe failed"
                 }
                 Timber.d(msg)
-                Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
             }
         trackInfectionsUseCase.execute().subscribe({
             val message = "New infection: $it"
@@ -149,14 +150,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setUpNavigation() {
-        val navHostFragment: NavHostFragment? = supportFragmentManager
+        //TODO change infection UX
+        /*val navHostFragment: NavHostFragment? = supportFragmentManager
             .findFragmentById(R.id.navHostFragment) as? NavHostFragment
         if (navHostFragment != null) {
-            NavigationUI.setupWithNavController(
+            NavigationUI.set(
                 binding.bottomNavigation,
                 navHostFragment.navController
             )
-        }
+        }*/
         mainViewModel.showInfectionMessage.observe(this, ::navigateToInfectionMessage)
     }
 

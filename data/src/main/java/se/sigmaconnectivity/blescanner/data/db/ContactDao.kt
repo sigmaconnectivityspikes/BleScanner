@@ -19,8 +19,14 @@ interface ContactDao {
     @Update
     fun update(contact: Contact)
 
-    @Query("SELECT * FROM CONTACTS_TABLE WHERE hash == (:infectedHash) LIMIT 1")
-    fun getContactByHash(infectedHash: String) : Contact?
+    @Query("SELECT * FROM CONTACTS_TABLE WHERE hash == (:hash) AND status == 1 LIMIT 1")
+    fun getContactByHashIfNotLost(hash: String) : Contact?
+
+    @Query("SELECT * FROM CONTACTS_TABLE WHERE hash == (:hash) LIMIT 1")
+    fun getContactByHash(hash: String) : Contact?
+
+    @Query("SELECT * FROM CONTACTS_TABLE")
+    fun getContacts() : List<Contact>
 
     @Query("SELECT COUNT(*) FROM CONTACTS_TABLE")
     fun count() : Int

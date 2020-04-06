@@ -14,7 +14,7 @@ class HasUserHadContactWithInfectedUseCase(
     fun execute(hash: String): Single<Boolean> {
         return contactRepository.getContactByHash(hash)
             .map {contact ->
-                contact.totalContactTime >= RISKY_CONTACT_DURATION.toMillis()
+                contact.duration >= RISKY_CONTACT_DURATION.toMillis()
             }.toSingle(false)
             .subscribeOn(Schedulers.io())
             .observeOn(postExecutionThread.scheduler)

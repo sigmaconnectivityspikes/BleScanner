@@ -35,6 +35,17 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    flavorDimensions "mode"
+    productFlavors {
+        dev {
+            dimension "mode"
+            buildConfigField "String", "WEB", "\"https://safesafe.thecoders.io\""
+        }
+        prod {
+            dimension "mode"
+            buildConfigField "String", "WEB", "\"https://safesafe.app\""
+        }
+    }
 }
 
 ext {
@@ -124,7 +135,9 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
     implementation 'com.facebook.stetho:stetho:1.5.1'
+    implementation 'com.google.code.gson:gson:2.8.6'
 
     implementation project(path: ':data')
     implementation project(path: ":domain")
+    implementation project(path: ":device")
 }

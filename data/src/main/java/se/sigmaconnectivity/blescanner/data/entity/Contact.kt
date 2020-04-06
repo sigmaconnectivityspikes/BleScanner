@@ -6,8 +6,10 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "contacts_table")
 data class Contact(
-    val hash: String,
-    @ColumnInfo(name = "last_timestamp") val lastTimeStamp: Long,
-    @ColumnInfo(name = "duration") val duration: Long,
-    @PrimaryKey(autoGenerate = true) val id: Long = 0
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "hash") val hash: String,
+    @ColumnInfo(name = "status") val status: Int,
+    @ColumnInfo(name = "match_timestamp") val matchTimestamp: Long,
+    @ColumnInfo(name = "last_timestamp") val lostTimestamp: Long,
+    @ColumnInfo(name = "duration") val duration: Long
 )
