@@ -8,12 +8,15 @@ import org.koin.dsl.module
 import se.sigmaconnectivity.blescanner.domain.executor.PostExecutionThread
 import se.sigmaconnectivity.blescanner.domain.usecase.*
 import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForBluetoothStatusUseCase
+import se.sigmaconnectivity.blescanner.service.ScanResultsObserver
 import se.sigmaconnectivity.blescanner.ui.MainViewModel
 import se.sigmaconnectivity.blescanner.ui.help.HelpViewModel
 import se.sigmaconnectivity.blescanner.ui.home.HomeViewModel
 
 val appModule = module {
     single { RxBleClient.create(androidApplication()) }
+    single { ScanResultsObserver( get()) }
+
     factory<PostExecutionThread> { se.sigmaconnectivity.blescanner.executor.PostExecutionThread() }
     factory<ContactUseCase> { ContactUseCaseImpl(get(), get()) }
     factory<UserUseCase> { UserUseCaseImpl(get(), get()) }
