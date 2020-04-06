@@ -7,4 +7,5 @@ object Consts {
     const val SCAN_PERIOD_SEC = 15L
     const val SCAN_TIMEOUT_SEC = 14L
     const val NOTIFICATION_ID = 1896
+    const val MARK_LOST_AFTER_RETRIES = 3
 }

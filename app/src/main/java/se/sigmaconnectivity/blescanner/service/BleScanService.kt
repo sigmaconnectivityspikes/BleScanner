@@ -33,7 +33,7 @@ import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
-import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
+import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
 import se.sigmaconnectivity.blescanner.ui.feature.FeatureStatus
@@ -50,7 +50,7 @@ class BleScanService() : Service() {
     }
 
     private val rxBleClient: RxBleClient by inject()
-    private val contactUseCase: ContactUseCase by inject()
+    private val scanResultsObserver: ScanResultsObserver by inject()
     private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
 
     //TODO: Use usecase for this conversion
@@ -184,21 +184,8 @@ class BleScanService() : Service() {
                 Timber.d("scanLeDevice started")
                 scanStatus = FeatureStatus.ACTIVE
             }.subscribe(
-                { scanResults ->
-                    val newItems = scanResults - existingScanItems
-                    Timber.d("-BT- new items found: $newItems")
-                    newItems.forEach {
-                        existingScanItems.add(it)
-                        processFirstMatch(it.hashId, it.timestamp)
-                    }
-                    val lostItems = existingScanItems - scanResults
-                    Timber.d("-BT- items lost: $lostItems")
-                    lostItems.forEach {
-                        existingScanItems.remove(it)
-                        val timestampMillis = System.currentTimeMillis()
-                        //TODO this is not real moment of lost visiblity, fix it
-                        processMatchLost(it.hashId, timestampMillis)
-                    }
+                {
+                    scanResultsObserver.onNewResults(it)
                 },
                 {
                     Timber.d(it, "Device found with error")
@@ -207,30 +194,6 @@ class BleScanService() : Service() {
                     }
                 }
             ).addTo(compositeDisposable)
-    }
-
-    private val existingScanItems = HashSet<ScanResultItem>()
-
-    private fun processFirstMatch(contactHash: String, timestamp: Long) {
-        Timber.d("CALLBACK_TYPE_FIRST_MATCH: $contactHash")
-        contactUseCase.processContactMatch(contactHash, timestamp)
-            .subscribe({
-                Timber.d("processContactMatch() SUCCESS")
-
-            }, {
-                Timber.e(it, "processContactMatch() FAILED")
-            }).addTo(compositeDisposable)
-    }
-
-    private fun processMatchLost(contactHash: String, timestamp: Long) {
-        Timber.d("CALLBACK_TYPE_MATCH_LOST: $contactHash")
-        contactUseCase.processContactLost(contactHash, timestamp)
-            .subscribe({
-                Timber.d("processContactLost() SUCCESS")
-
-            }, {
-                Timber.d("processContactLost() FAILED \n $it")
-            }).addTo(compositeDisposable)
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
@@ -279,27 +242,9 @@ class BleScanService() : Service() {
         bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
             Timber.d("Advertising stopped")
         }
+        scanResultsObserver.onClear()
         stopForeground(true)
         stopSelf()
         super.onDestroy()
     }
-}
-
-//TODO: move to external file
-data class ScanResultItem(
-    val timestamp: Long,
-    val hashId: String
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as ScanResultItem
-
-        if (hashId != other.hashId) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int = hashId.hashCode()
 }
