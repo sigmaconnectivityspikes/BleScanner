@@ -25,7 +25,7 @@ interface ContactDao {
     @Query("SELECT * FROM CONTACTS_TABLE WHERE hash == (:hash) LIMIT 1")
     fun getContactByHash(hash: String) : Contact?
 
-    @Query("SELECT * FROM CONTACTS_TABLE")
+    @Query("SELECT * FROM CONTACTS_TABLE ORDER BY match_timestamp DESC")
     fun getContacts() : List<Contact>
 
     @Query("SELECT COUNT(*) FROM CONTACTS_TABLE")

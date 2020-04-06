@@ -229,7 +229,7 @@ class BleScanService() : Service() {
             0
         )
         return NotificationCompat.Builder(applicationContext, Consts.NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.app_name))
             .setStyle(
                 NotificationCompat.BigTextStyle()
@@ -245,6 +245,7 @@ class BleScanService() : Service() {
         if (!scanDisposable.isDisposed) scanDisposable.dispose()
         bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
             Timber.d("Advertising stopped")
+            updateNotification(adv = FeatureStatus.INACTIVE)
         }
         scanResultsObserver.onClear()
         stopForeground(true)
