@@ -17,7 +17,6 @@ import android.os.ParcelUuid
 import androidx.core.app.NotificationCompat
 import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.exceptions.BleScanException
-import com.polidea.rxandroidble2.scan.ScanCallbackType
 import com.polidea.rxandroidble2.scan.ScanFilter
 import com.polidea.rxandroidble2.scan.ScanResult
 import com.polidea.rxandroidble2.scan.ScanSettings
@@ -34,10 +33,10 @@ import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
-import se.sigmaconnectivity.blescanner.ui.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
+import se.sigmaconnectivity.blescanner.ui.feature.FeatureStatus
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
@@ -158,8 +157,6 @@ class BleScanService() : Service() {
             .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
             .build()
         Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
-            .doOnNext {
-            }
             .flatMapSingle {
                 Timber.d("BT- next scan")
                 doScan(scanSettings, scanFilter, SCAN_TIMEOUT_SEC)
