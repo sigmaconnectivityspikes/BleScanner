@@ -177,8 +177,6 @@ class BleScanService() : Service() {
                     .collect(
                         { HashSet() },
                         { list: MutableSet<ScanResultItem>, item: ScanResultItem -> list.add(item) })
-                    .doOnSuccess {
-                    }
             }
             .doOnDispose {
                 Timber.d("scanLeDevice disposed")
