@@ -1,10 +1,10 @@
 package se.sigmaconnectivity.blescanner.di
 
-import com.polidea.rxandroidble2.RxBleClient
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import se.sigmaconnectivity.blescanner.blewrapper.BluetoothScanner
 import se.sigmaconnectivity.blescanner.domain.executor.PostExecutionThread
 import se.sigmaconnectivity.blescanner.domain.usecase.*
 import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForBluetoothStatusUseCase
@@ -14,7 +14,7 @@ import se.sigmaconnectivity.blescanner.ui.help.HelpViewModel
 import se.sigmaconnectivity.blescanner.ui.home.HomeViewModel
 
 val appModule = module {
-    single { RxBleClient.create(androidApplication()) }
+    single { BluetoothScanner(androidApplication()) }
     single { ScanResultsObserver( get()) }
 
     factory<PostExecutionThread> { se.sigmaconnectivity.blescanner.executor.PostExecutionThread() }
