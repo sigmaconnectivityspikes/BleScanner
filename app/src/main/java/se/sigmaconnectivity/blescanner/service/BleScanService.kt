@@ -30,6 +30,7 @@ import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
+import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
@@ -39,8 +40,13 @@ import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 class BleScanService() : Service() {
+
+    companion object {
+        var isRunning = AtomicBoolean(false)
+    }
 
     private val rxBleClient: RxBleClient by inject()
     private val contactUseCase: ContactUseCase by inject()
@@ -86,14 +92,19 @@ class BleScanService() : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         startForeground(Consts.NOTIFICATION_ID, createNotification())
-        startScan()
+
+        isRunning.set(true)
+
+        // handle the case when service is started multiply times
+        if (scanStatus == FeatureStatus.INACTIVE) {
+            scanLeDevice()
+        }
+
+        if (advertiseStatus == FeatureStatus.INACTIVE) {
+            bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
+        }
 
         return START_NOT_STICKY
-    }
-
-    private fun startScan() {
-        scanLeDevice()
-        bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
     }
 
     private fun startAdv(mBluetoothAdapter: BluetoothAdapter) {
@@ -106,7 +117,8 @@ class BleScanService() : Service() {
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
             val serviceUUID = UUID.fromString(Consts.SERVICE_UUID)
-            val buffer = ByteBuffer.wrap(userUid + userUid.toChecksum())
+            val userIdHash = userUid.toHash()
+            val buffer = ByteBuffer.wrap(userIdHash + userIdHash.toChecksum())
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
@@ -115,7 +127,7 @@ class BleScanService() : Service() {
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("BT- Advertise data: ${hashConverter.convert(userUid).blockingGet()}")
+            Timber.d("BT- Advertise data: ${hashConverter.convert(userIdHash).blockingGet()}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -132,7 +144,7 @@ class BleScanService() : Service() {
         rxBleClient.scanBleDevices(scanSettings, scanFilter).takeUntil(
             Observable.timer(timeoutS, TimeUnit.SECONDS)
         ).doOnError {
-            Timber.d(it, "-BT- fun error")
+            Timber.w(it, "-BT-  Scan  error")
         }
 
     private fun scanLeDevice() {
@@ -175,12 +187,13 @@ class BleScanService() : Service() {
             }.subscribe(
                 { scanResults ->
                     val newItems = scanResults - existingScanItems
-
+                    Timber.d("-BT- new items found: $newItems")
                     newItems.forEach {
                         existingScanItems.add(it)
                         processFirstMatch(it.hashId, it.timestamp)
                     }
                     val lostItems = existingScanItems - scanResults
+                    Timber.d("-BT- items lost: $lostItems")
                     lostItems.forEach {
                         existingScanItems.remove(it)
                         val timestampMillis = System.currentTimeMillis()
@@ -220,16 +233,14 @@ class BleScanService() : Service() {
 
     private fun assembleUID(scanResult: ScanResult): String? {
         val results = scanResult.scanRecord.getManufacturerSpecificData(Consts.MANUFACTURER_ID)
-        Timber.d("BT- scan result uuid ${scanResult.scanRecord.serviceUuids}")
         return results?.let {
             //TODO: change it to chained rx invocation
             val bytes = ByteBuffer.allocate(8)
                 .put(it)
-            val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES)
+            val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
             val checksum = bytes.array()[HASH_SIZE_BYTES]
             if (hashBytes.isValidChecksum(checksum)) {
                 val data = hashConverter.convert(hashBytes).blockingGet()
-                Timber.d("BT- data received: $data")
                 data
             } else {
                 null
@@ -261,6 +272,7 @@ class BleScanService() : Service() {
     }
 
     override fun onDestroy() {
+        isRunning.set(false)
         compositeDisposable.clear()
         bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
             Timber.d("Advertising stopped")
@@ -271,7 +283,7 @@ class BleScanService() : Service() {
     }
 }
 
-//TODO: move to external filter
+//TODO: move to external file
 data class ScanResultItem(
     val timestamp: Long,
     val hashId: String

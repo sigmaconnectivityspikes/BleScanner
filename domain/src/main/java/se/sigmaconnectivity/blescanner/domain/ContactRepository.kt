@@ -13,5 +13,4 @@ interface ContactRepository {
     fun getContacts(): Observable<List<Entity.Contact>>
     fun getContactByHashIfNotLostOrNew(hash: String): Single<Entity.Contact>
     fun getContactByHash(hash: String): Maybe<Entity.Contact>
-    fun getAllContacts(): Maybe<List<Entity.Contact>>
 }

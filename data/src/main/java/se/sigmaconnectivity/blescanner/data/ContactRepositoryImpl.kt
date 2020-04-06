@@ -30,7 +30,6 @@ class ContactRepositoryImpl(private val contactDao: ContactDao) : ContactReposit
     }
 
     override fun saveContact(contact: Entity.Contact): Completable {
-        Timber.d("saveContact: $contact")
         return Completable.fromAction {
             Timber.d("saveDevice")
             if (contact.id > 0) {

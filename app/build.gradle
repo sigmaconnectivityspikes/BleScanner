@@ -113,6 +113,7 @@ dependencies {
     // or Koin for Android Architecture ViewModel
     implementation "org.koin:koin-androidx-viewmodel:$koinVersion"
     implementation "org.koin:koin-androidx-viewmodel:2.1.5"
+
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
 

@@ -15,8 +15,6 @@ class ContactUseCaseImpl(
     private val contactRepository: ContactRepository
 ) : ContactUseCase {
 
-    private val currentContacts = hashMapOf<String, Long>()
-
     override fun saveContact(contact: Entity.Contact): Completable {
         return contactRepository.saveContact(contact)
             .subscribeOn(Schedulers.io())
@@ -35,7 +33,7 @@ class ContactUseCaseImpl(
             .observeOn(postExecutionThread.scheduler)
     }
 
-    override fun getContactsCount(): Single<Int> {
+    override fun getDevicesCount(): Single<Int> {
         return contactRepository.getDevicesCount()
             .subscribeOn(Schedulers.io())
             .observeOn(postExecutionThread.scheduler)
