@@ -14,6 +14,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
 import android.os.ParcelUuid
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.exceptions.BleScanException
@@ -22,6 +23,7 @@ import com.polidea.rxandroidble2.scan.ScanResult
 import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.disposables.Disposable
 import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
 import se.sigmaconnectivity.blescanner.Consts
@@ -59,6 +61,8 @@ class BleScanService() : Service() {
     private var scanStatus = FeatureStatus.INACTIVE
     private var advertiseStatus = FeatureStatus.INACTIVE
 
+    private lateinit var scanDisposable: Disposable
+
     private val bluetoothAdapter by lazy {
         (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
     }
@@ -70,18 +74,15 @@ class BleScanService() : Service() {
     private val mAdvertiseCallback: AdvertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
             Timber.d("Peripheral advertising started.")
-            advertiseStatus = FeatureStatus.ACTIVE
-            updateNotification()
+            updateNotification(adv = FeatureStatus.ACTIVE)
         }
 
         override fun onStartFailure(errorCode: Int) {
             Timber.d("Peripheral advertising failed: $errorCode")
             if (errorCode == ADVERTISE_FAILED_ALREADY_STARTED) {
-                advertiseStatus = FeatureStatus.ACTIVE
-                updateNotification()
+                updateNotification(adv = FeatureStatus.ACTIVE)
             } else {
-                advertiseStatus = FeatureStatus.INACTIVE
-                updateNotification()
+                updateNotification(adv = FeatureStatus.INACTIVE)
             }
         }
     }
@@ -98,12 +99,14 @@ class BleScanService() : Service() {
 
         // handle the case when service is started multiply times
         if (scanStatus == FeatureStatus.INACTIVE) {
-            scanLeDevice()
+            scanDisposable = scanLeDevice()
         }
 
         if (advertiseStatus == FeatureStatus.INACTIVE) {
             bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
         }
+
+        observeStatus()
 
         return START_NOT_STICKY
     }
@@ -148,7 +151,7 @@ class BleScanService() : Service() {
             Timber.w(it, "-BT-  Scan  error")
         }
 
-    private fun scanLeDevice() {
+    private fun scanLeDevice(): Disposable {
         val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
             .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
@@ -156,7 +159,7 @@ class BleScanService() : Service() {
         val scanFilter = ScanFilter.Builder()
             .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
             .build()
-        Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
+        return Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
             .flatMapSingle {
                 Timber.d("BT- next scan")
                 doScan(scanSettings, scanFilter, SCAN_TIMEOUT_SEC)
@@ -174,15 +177,13 @@ class BleScanService() : Service() {
                     .collect(
                         { HashSet() },
                         { items: MutableSet<ScanResultItem>, item: ScanResultItem -> items.add(item) })
-                    .doOnSuccess {
-                    }
             }
             .doOnDispose {
                 Timber.d("scanLeDevice disposed")
-                scanStatus = FeatureStatus.INACTIVE
+                updateNotification(scan = FeatureStatus.INACTIVE)
             }.doOnSubscribe {
                 Timber.d("scanLeDevice started")
-                scanStatus = FeatureStatus.ACTIVE
+                updateNotification(scan = FeatureStatus.ACTIVE)
             }.subscribe(
                 {
                     scanResultsObserver.onNewResults(it)
@@ -190,10 +191,10 @@ class BleScanService() : Service() {
                 {
                     Timber.d(it, "Device found with error")
                     if (it is BleScanException) {
-                        scanStatus = FeatureStatus.INACTIVE
+                        updateNotification(scan = FeatureStatus.INACTIVE)
                     }
                 }
-            ).addTo(compositeDisposable)
+            )
     }
 
     private fun assembleUID(scanResult: ScanResult): String? {
@@ -213,7 +214,9 @@ class BleScanService() : Service() {
         }
     }
 
-    private fun updateNotification() {
+    private fun updateNotification(scan: FeatureStatus = scanStatus, adv: FeatureStatus = advertiseStatus) {
+        scanStatus = scan
+        advertiseStatus = adv
         notificationManager?.notify(Consts.NOTIFICATION_ID, createNotification())
     }
 
@@ -239,6 +242,7 @@ class BleScanService() : Service() {
     override fun onDestroy() {
         isRunning.set(false)
         compositeDisposable.clear()
+        if (!scanDisposable.isDisposed) scanDisposable.dispose()
         bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
             Timber.d("Advertising stopped")
         }
@@ -246,5 +250,35 @@ class BleScanService() : Service() {
         stopForeground(true)
         stopSelf()
         super.onDestroy()
+    }
+
+    private fun observeStatus() {
+        if (rxBleClient.state == RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED) {
+            showEnableLocationToast()
+        }
+
+        rxBleClient.observeStateChanges()
+            .subscribe {
+                when(it){
+                    RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED -> {
+                            showEnableLocationToast()
+                            scanDisposable.dispose()
+                    }
+                    RxBleClient.State.READY -> {
+                        scanDisposable = scanLeDevice()
+                    }
+                    else -> {
+                        Timber.d("Problem with: ${it.name}")
+                    }
+                }
+            }.addTo(compositeDisposable)
+    }
+
+    private fun showEnableLocationToast() {
+        Toast.makeText(
+            this,
+            "Please enable Location to use ${getString(R.string.app_name)}",
+            Toast.LENGTH_LONG
+        ).show()
     }
 }
