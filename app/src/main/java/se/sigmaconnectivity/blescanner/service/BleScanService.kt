@@ -16,6 +16,7 @@ import android.os.IBinder
 import android.os.ParcelUuid
 import androidx.core.app.NotificationCompat
 import com.polidea.rxandroidble2.RxBleClient
+import com.polidea.rxandroidble2.exceptions.BleScanException
 import com.polidea.rxandroidble2.scan.ScanCallbackType
 import com.polidea.rxandroidble2.scan.ScanFilter
 import com.polidea.rxandroidble2.scan.ScanResult
@@ -23,7 +24,6 @@ import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
-import org.threeten.bp.Duration
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
@@ -31,7 +31,7 @@ import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
-import se.sigmaconnectivity.blescanner.domain.feature.FeatureStatus
+import se.sigmaconnectivity.blescanner.ui.feature.FeatureStatus
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
@@ -174,6 +174,9 @@ class BleScanService() : Service() {
                 },
                 {
                     Timber.d(it, "Device found with error")
+                    if (it is BleScanException) {
+                        scanStatus = FeatureStatus.INACTIVE
+                    }
                 }
             ).addTo(compositeDisposable)
     }
@@ -242,7 +245,7 @@ class BleScanService() : Service() {
             .setContentTitle(getString(R.string.app_name))
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText(getString(R.string.notification_content, scanStatus, advertiseStatus))
+                    .bigText(getString(R.string.notification_content, getString(scanStatus.nameRes), getString(advertiseStatus.nameRes)))
             )
             .setContentIntent(pendingIntent)
             .build()
