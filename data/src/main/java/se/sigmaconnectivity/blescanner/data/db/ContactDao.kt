@@ -30,4 +30,7 @@ interface ContactDao {
 
     @Query("SELECT COUNT(*) FROM CONTACTS_TABLE")
     fun count() : Int
+
+    @Query("SELECT * FROM CONTACTS_TABLE")
+    fun getAllContacts(): List<Contact>
 }

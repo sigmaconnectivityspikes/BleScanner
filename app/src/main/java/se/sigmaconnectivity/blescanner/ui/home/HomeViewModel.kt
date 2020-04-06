@@ -9,7 +9,6 @@ import com.google.gson.Gson
 import io.reactivex.rxkotlin.addTo
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForBluetoothStatusUseCase
 import se.sigmaconnectivity.blescanner.extensions.isBluetoothEnabled
 import se.sigmaconnectivity.blescanner.service.BleScanService
 import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel

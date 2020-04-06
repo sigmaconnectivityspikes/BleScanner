@@ -17,27 +17,30 @@ import android.os.ParcelUuid
 import androidx.core.app.NotificationCompat
 import com.polidea.rxandroidble2.RxBleClient
 import com.polidea.rxandroidble2.exceptions.BleScanException
-import com.polidea.rxandroidble2.scan.ScanCallbackType
 import com.polidea.rxandroidble2.scan.ScanFilter
 import com.polidea.rxandroidble2.scan.ScanResult
 import com.polidea.rxandroidble2.scan.ScanSettings
+import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import org.koin.android.ext.android.inject
 import se.sigmaconnectivity.blescanner.Consts
+import se.sigmaconnectivity.blescanner.Consts.SCAN_PERIOD_SEC
+import se.sigmaconnectivity.blescanner.Consts.SCAN_TIMEOUT_SEC
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
-import se.sigmaconnectivity.blescanner.ui.feature.FeatureStatus
-import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
+import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
+import se.sigmaconnectivity.blescanner.ui.feature.FeatureStatus
 import timber.log.Timber
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class BleScanService() : Service() {
@@ -47,7 +50,7 @@ class BleScanService() : Service() {
     }
 
     private val rxBleClient: RxBleClient by inject()
-    private val contactUseCase: ContactUseCase by inject()
+    private val scanResultsObserver: ScanResultsObserver by inject()
     private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
 
     //TODO: Use usecase for this conversion
@@ -114,7 +117,7 @@ class BleScanService() : Service() {
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
-            val serviceUUID =  UUID.fromString(Consts.SERVICE_UUID)
+            val serviceUUID = UUID.fromString(Consts.SERVICE_UUID)
             val userIdHash = userUid.toHash()
             val buffer = ByteBuffer.wrap(userIdHash + userIdHash.toChecksum())
             val data: AdvertiseData = AdvertiseData.Builder()
@@ -138,39 +141,51 @@ class BleScanService() : Service() {
 
     }
 
+    private fun doScan(scanSettings: ScanSettings, scanFilter: ScanFilter, timeoutS: Long) =
+        rxBleClient.scanBleDevices(scanSettings, scanFilter).takeUntil(
+            Observable.timer(timeoutS, TimeUnit.SECONDS)
+        ).doOnError {
+            Timber.w(it, "-BT-  Scan  error")
+        }
+
     private fun scanLeDevice() {
-        val scanSettingsAll = ScanSettings.Builder()
+        val scanSettings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
             .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-            .build()
-        val scanSettingsLost = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-            .setCallbackType(ScanSettings.CALLBACK_TYPE_MATCH_LOST)
             .build()
         val scanFilter = ScanFilter.Builder()
             .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
             .build()
-        rxBleClient.scanBleDevices(scanSettingsAll, scanFilter)
-            .mergeWith(rxBleClient.scanBleDevices(scanSettingsLost, scanFilter))
-            .doOnSubscribe {
-                Timber.d("scanLeDevice started")
-                scanStatus = FeatureStatus.ACTIVE
+        Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
+            .flatMapSingle {
+                Timber.d("BT- next scan")
+                doScan(scanSettings, scanFilter, SCAN_TIMEOUT_SEC)
+                    .filter {
+                        assembleUID(it) != null
+                    }
+                    .map {
+                        val uid = assembleUID(it)
+                        checkNotNull(uid)
+                        ScanResultItem(
+                            timestamp = System.currentTimeMillis(),
+                            hashId = uid
+                        )
+                    }
+                    .collect(
+                        { HashSet() },
+                        { items: MutableSet<ScanResultItem>, item: ScanResultItem -> items.add(item) })
+                    .doOnSuccess {
+                    }
             }
             .doOnDispose {
                 Timber.d("scanLeDevice disposed")
                 scanStatus = FeatureStatus.INACTIVE
-            }
-            .subscribe(
-                { scanResult ->
-                    val timestampMillis = System.currentTimeMillis() //TODO time from scanResult
-                    Timber.d("-BT- found scanResult ${scanResult.scanRecord.serviceUuids} callbackType ${scanResult.callbackType}")
-                    assembleUID(scanResult)?.let {
-                        if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_ALL_MATCHES) {
-                            processMatch(it, timestampMillis)
-                        } else if (scanResult.callbackType == ScanCallbackType.CALLBACK_TYPE_MATCH_LOST) {
-                            processMatchLost(it, timestampMillis)
-                        }
-                    } ?: Timber.e("Can not assemble UID")
+            }.doOnSubscribe {
+                Timber.d("scanLeDevice started")
+                scanStatus = FeatureStatus.ACTIVE
+            }.subscribe(
+                {
+                    scanResultsObserver.onNewResults(it)
                 },
                 {
                     Timber.d(it, "Device found with error")
@@ -181,37 +196,8 @@ class BleScanService() : Service() {
             ).addTo(compositeDisposable)
     }
 
-    private val existingMatchingHashes = HashSet<String>()
-
-    private fun processMatch(contactHash: String, timestamp: Long) {
-        Timber.d("-BT- checking match: $contactHash in $existingMatchingHashes")
-        if (!existingMatchingHashes.contains(contactHash)) {
-            Timber.d("-BT- found match: $contactHash")
-            existingMatchingHashes.add(contactHash)
-            Timber.d("CALLBACK_TYPE_FIRST_MATCH: $contactHash")
-            contactUseCase.processContactMatch(contactHash, timestamp)
-                .subscribe({
-                    Timber.d("processContactMatch() SUCCESS")
-                }, {
-                    Timber.e(it, "processContactMatch() FAILED")
-                }).addTo(compositeDisposable)
-        }
-    }
-
-    private fun processMatchLost(contactHash: String, timestamp: Long) {
-        Timber.d("CALLBACK_TYPE_MATCH_LOST: $contactHash")
-        existingMatchingHashes.remove(contactHash)
-        contactUseCase.processContactLost(contactHash, timestamp)
-            .subscribe({
-                Timber.d("processContactLost() SUCCESS")
-            }, {
-                Timber.d("processContactLost() FAILED \n $it")
-            }).addTo(compositeDisposable)
-    }
-
     private fun assembleUID(scanResult: ScanResult): String? {
         val results = scanResult.scanRecord.getManufacturerSpecificData(Consts.MANUFACTURER_ID)
-        Timber.d("BT- scan result uuid ${scanResult.scanRecord.serviceUuids}")
         return results?.let {
             //TODO: change it to chained rx invocation
             val bytes = ByteBuffer.allocate(8)
@@ -220,7 +206,6 @@ class BleScanService() : Service() {
             val checksum = bytes.array()[HASH_SIZE_BYTES]
             if (hashBytes.isValidChecksum(checksum)) {
                 val data = hashConverter.convert(hashBytes).blockingGet()
-                Timber.d("BT- data received: $data")
                 data
             } else {
                 null
@@ -257,6 +242,7 @@ class BleScanService() : Service() {
         bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
             Timber.d("Advertising stopped")
         }
+        scanResultsObserver.onClear()
         stopForeground(true)
         stopSelf()
         super.onDestroy()
