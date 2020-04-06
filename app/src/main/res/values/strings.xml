@@ -3,10 +3,14 @@
 
     <!--  Notifications  -->
     <string name="notification_channel_name">KoronaLokalizator notifications</string>
-    <string name="notification_content">Services status:\nScanning: %1$s\nAdvertising: %2$s</string>
+    <string name="notification_content">Stan serwisów:\nSkanowanie: %1$s\nRozgłaszanie: %2$s</string>
     <string name="stop_service">Stop service!</string>
     <string name="start_service">Start service!</string>
     <string name="qr_code">QR code</string>
+
+    <!--  FeatureStatus  -->
+    <string name="feature_active">Aktywny</string>
+    <string name="feature_inactive">Nieaktywny</string>
 
     <!--  Main Menu  -->
     <string name="main_menu_home">Home</string>
