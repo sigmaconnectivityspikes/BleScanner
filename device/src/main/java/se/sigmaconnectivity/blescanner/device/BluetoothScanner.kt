@@ -2,7 +2,11 @@ package se.sigmaconnectivity.blescanner.device
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.*
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
 import io.reactivex.Observable
@@ -23,8 +27,8 @@ class BluetoothScanner(private val context: Context) {
     }
     private val scanResultsSubject: PublishSubject<ScanResultWrapper> = PublishSubject.create()
 
-    private val scanningStatusSubject: BehaviorSubject<BLEScanState> = BehaviorSubject.createDefault(
-        BLEScanState.Stopped
+    private val scanningStatusSubject: BehaviorSubject<BLEFeatureState> = BehaviorSubject.createDefault(
+        BLEFeatureState.Stopped
     )
 
 
@@ -37,13 +41,13 @@ class BluetoothScanner(private val context: Context) {
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
         bleScanner?.let {
             it.startScan(mutableListOf(scanFilter), settings, scanCallback)
-            scanningStatusSubject.onNext(BLEScanState.Started)
+            scanningStatusSubject.onNext(BLEFeatureState.Started)
         } ?: run { onScanError(StatusErrorType.ILLEGAL_BLUETOOTH_STATE) }
     }
 
     private fun stopScan() {
         bleScanner?.stopScan(scanCallback)
-        scanningStatusSubject.onNext(BLEScanState.Stopped)
+        scanningStatusSubject.onNext(BLEFeatureState.Stopped)
     }
 
     private fun onScanError(error: StatusErrorType) {
@@ -52,7 +56,7 @@ class BluetoothScanner(private val context: Context) {
                 IllegalStateException("Not ready to start scanning")
             )
         )
-        scanningStatusSubject.onNext(BLEScanState.Error(error))
+        scanningStatusSubject.onNext(BLEFeatureState.Error(error))
     }
 
     fun scanBleDevicesWithTimeout(serviceUuid: ParcelUuid, timeoutMillis: Long): Observable<ScanResult> =
@@ -60,7 +64,7 @@ class BluetoothScanner(private val context: Context) {
             Observable.timer(timeoutMillis, TimeUnit.MILLISECONDS)
         )
 
-    val trackScanningStatus: Observable<BLEScanState>
+    val trackScanningStatus: Observable<BLEFeatureState>
         get() = scanningStatusSubject.hide()
 
     private fun scanBleDevices(serviceUuid: ParcelUuid): Observable<ScanResult> =
