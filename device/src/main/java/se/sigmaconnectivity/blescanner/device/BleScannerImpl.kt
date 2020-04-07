@@ -40,23 +40,36 @@ class BleScannerImpl(private val context: Context) :
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
         bleScanner?.let {
-            it.startScan(mutableListOf(scanFilter), settings, scanCallback)
+            try {
+                it.startScan(mutableListOf(scanFilter), settings, scanCallback)
+            } catch (e: Exception) {
+                onScanError(e)
+            }
             scanningStatusSubject.onNext(BLEScanState.Started)
-        } ?: run { onScanError(StatusErrorType.ILLEGAL_BLUETOOTH_STATE) }
+        } ?: run { onScanError(java.lang.IllegalStateException("Couldn't get BLE scanner")) }
     }
 
     private fun stopScan() {
-        bleScanner?.stopScan(scanCallback)
+        try {
+            bleScanner?.stopScan(scanCallback)
+        } catch (e: Exception) {
+            onScanError(e)
+            return
+        }
         scanningStatusSubject.onNext(BLEScanState.Stopped)
     }
 
-    private fun onScanError(error: StatusErrorType) {
+    private fun onScanError(error: Throwable) {
         scanResultsSubject.onNext(
             ScanResultWrapper.ScanResultFailure(
                 IllegalStateException("Not ready to start scanning")
             )
         )
-        scanningStatusSubject.onNext(BLEScanState.Error(error))
+        val errorType = when (error) {
+            is IllegalStateException -> StatusErrorType.ILLEGAL_BLUETOOTH_STATE
+            else -> StatusErrorType.UNKNOWN
+        }
+        scanningStatusSubject.onNext(BLEScanState.Error(errorType))
     }
 
     override fun scanBleDevicesWithTimeout(serviceUuid: String, timeoutMillis: Long): Observable<ScanResultItem> =
@@ -81,6 +94,8 @@ class BleScannerImpl(private val context: Context) :
                     is ScanResultWrapper.ScanResultFailure -> throw result.error
                     is ScanResultWrapper.ScanResultSuccess -> result.scanResult.toDomainItem()
                 }
+            }.doOnError {
+                Timber.e(it, "WNASILOWSKILOG error")
             }
 
     private val scanCallback = object: ScanCallback() {
