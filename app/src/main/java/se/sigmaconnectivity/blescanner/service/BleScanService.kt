@@ -26,12 +26,13 @@ import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.Consts.SCAN_PERIOD_SEC
 import se.sigmaconnectivity.blescanner.Consts.SCAN_TIMEOUT_SEC
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.blewrapper.BluetoothScanner
-import se.sigmaconnectivity.blescanner.blewrapper.LocationStatus
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.data.toHash
+import se.sigmaconnectivity.blescanner.device.BluetoothScanner
+import se.sigmaconnectivity.blescanner.device.LocationStatus
+import se.sigmaconnectivity.blescanner.device.LocationStatusRepository
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
@@ -52,6 +53,7 @@ class BleScanService() : Service() {
     private val scanResultsObserver: ScanResultsObserver by inject()
     private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
     private val bluetoothScanner: BluetoothScanner by inject()
+    private val locationStatusRepository: LocationStatusRepository by inject()
 
     //TODO: Use usecase for this conversion
     private val hashConverter: HashConverter by inject()
@@ -243,7 +245,7 @@ class BleScanService() : Service() {
     }
 
     private fun observeLocationStatus() {
-        bluetoothScanner.trackLocationStatus.subscribe(
+        locationStatusRepository.trackLocationStatus.subscribe(
             {
                 Timber.d("-BT- Location status: $it")
                 when (it) {
