@@ -117,9 +117,6 @@ dependencies {
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
-    //RxAndroidBle
-    implementation "com.polidea.rxandroidble2:rxandroidble:1.11.0"
-
     //Firebase
     implementation 'com.google.firebase:firebase-core:17.2.3'
     implementation 'com.google.firebase:firebase-messaging:20.1.3'
