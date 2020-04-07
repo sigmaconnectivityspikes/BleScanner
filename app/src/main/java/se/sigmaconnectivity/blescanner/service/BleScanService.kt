@@ -247,7 +247,9 @@ class BleScanService() : Service() {
     }
 
     private fun observeStatus() {
-        /*     if (rxBleClient.state == RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED) {
+
+        /*
+            if (rxBleClient.state == RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED) {
                  showEnableLocationToast()
              }
 
