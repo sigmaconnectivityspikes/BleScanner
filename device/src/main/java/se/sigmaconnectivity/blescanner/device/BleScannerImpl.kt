@@ -8,10 +8,16 @@ import android.os.ParcelUuid
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import se.sigmaconnectivity.blescanner.device.converters.toDomainItem
+import se.sigmaconnectivity.blescanner.domain.BleScanner
+import se.sigmaconnectivity.blescanner.domain.model.BLEScanState
+import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
+import se.sigmaconnectivity.blescanner.domain.model.StatusErrorType
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
-class BluetoothScanner(private val context: Context) {
+class BleScannerImpl(private val context: Context) :
+    BleScanner {
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -27,43 +33,54 @@ class BluetoothScanner(private val context: Context) {
         BLEScanState.Stopped
     )
 
-
-
-    private fun startScan(serviceUuid: ParcelUuid) {
+    private fun startScan(serviceUuid: String) {
         val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(serviceUuid)
+            .setServiceUuid(ParcelUuid.fromString(serviceUuid))
             .build()
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
         bleScanner?.let {
-            it.startScan(mutableListOf(scanFilter), settings, scanCallback)
+            try {
+                it.startScan(mutableListOf(scanFilter), settings, scanCallback)
+            } catch (e: Exception) {
+                onScanError(e)
+            }
             scanningStatusSubject.onNext(BLEScanState.Started)
-        } ?: run { onScanError(StatusErrorType.ILLEGAL_BLUETOOTH_STATE) }
+        } ?: run { onScanError(java.lang.IllegalStateException("Couldn't get BLE scanner")) }
     }
 
     private fun stopScan() {
-        bleScanner?.stopScan(scanCallback)
+        try {
+            bleScanner?.stopScan(scanCallback)
+        } catch (e: Exception) {
+            onScanError(e)
+            return
+        }
         scanningStatusSubject.onNext(BLEScanState.Stopped)
     }
 
-    private fun onScanError(error: StatusErrorType) {
+    private fun onScanError(error: Throwable) {
         scanResultsSubject.onNext(
             ScanResultWrapper.ScanResultFailure(
                 IllegalStateException("Not ready to start scanning")
             )
         )
-        scanningStatusSubject.onNext(BLEScanState.Error(error))
+        val errorType = when (error) {
+            is IllegalStateException -> StatusErrorType.ILLEGAL_BLUETOOTH_STATE
+            else -> StatusErrorType.UNKNOWN
+        }
+        scanningStatusSubject.onNext(BLEScanState.Error(errorType))
     }
 
-    fun scanBleDevicesWithTimeout(serviceUuid: ParcelUuid, timeoutMillis: Long): Observable<ScanResult> =
+    override fun scanBleDevicesWithTimeout(serviceUuid: String, timeoutMillis: Long): Observable<ScanResultItem> =
         scanBleDevices(serviceUuid).takeUntil(
             Observable.timer(timeoutMillis, TimeUnit.MILLISECONDS)
         )
 
-    val trackScanningStatus: Observable<BLEScanState>
+    override val trackScanningStatus: Observable<BLEScanState>
         get() = scanningStatusSubject.hide()
 
-    private fun scanBleDevices(serviceUuid: ParcelUuid): Observable<ScanResult> =
+    private fun scanBleDevices(serviceUuid: String): Observable<ScanResultItem> =
         scanResultsSubject
             .hide()
             .doOnSubscribe {
@@ -75,8 +92,10 @@ class BluetoothScanner(private val context: Context) {
             }.map {result ->
                 when(result) {
                     is ScanResultWrapper.ScanResultFailure -> throw result.error
-                    is ScanResultWrapper.ScanResultSuccess -> result.scanResult
+                    is ScanResultWrapper.ScanResultSuccess -> result.scanResult.toDomainItem()
                 }
+            }.doOnError {
+                Timber.e(it, "WNASILOWSKILOG error")
             }
 
     private val scanCallback = object: ScanCallback() {

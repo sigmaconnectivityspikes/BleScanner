@@ -1,4 +1,4 @@
-package se.sigmaconnectivity.blescanner.device
+package se.sigmaconnectivity.blescanner.domain.model
 
 sealed class BLEScanState {
     object Started: BLEScanState()
