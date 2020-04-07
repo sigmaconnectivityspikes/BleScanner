@@ -140,7 +140,7 @@ class BleScanService() : Service() {
             .flatMapSingle {
                 Timber.d("BT- next scan")
                 bluetoothScanner.scanBleDevicesWithTimeout(
-                    ParcelUuid.fromString(Consts.SERVICE_TX_UUID),
+                    ParcelUuid.fromString(Consts.SERVICE_USER_HASH_UUID),
                     SCAN_TIMEOUT_SEC * 1000L
                 )
                     .filter {
