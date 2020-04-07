@@ -27,6 +27,7 @@ import se.sigmaconnectivity.blescanner.Consts.SCAN_PERIOD_SEC
 import se.sigmaconnectivity.blescanner.Consts.SCAN_TIMEOUT_SEC
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.blewrapper.BluetoothScanner
+import se.sigmaconnectivity.blescanner.blewrapper.LocationStatus
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.data.isValidChecksum
 import se.sigmaconnectivity.blescanner.data.toChecksum
@@ -58,7 +59,7 @@ class BleScanService() : Service() {
     private var scanStatus = FeatureStatus.INACTIVE
     private var advertiseStatus = FeatureStatus.INACTIVE
 
-    private lateinit var scanDisposable: Disposable
+    private var scanDisposable: Disposable? = null
 
     private val bluetoothAdapter by lazy {
         (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
@@ -94,16 +95,11 @@ class BleScanService() : Service() {
 
         isRunning.set(true)
 
-        // handle the case when service is started multiply times
-        if (scanStatus == FeatureStatus.INACTIVE) {
-            scanDisposable = scanLeDevice()
-        }
-
         if (advertiseStatus == FeatureStatus.INACTIVE) {
             bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
         }
 
-        observeStatus()
+        observeLocationStatus()
 
         return START_NOT_STICKY
     }
@@ -236,7 +232,7 @@ class BleScanService() : Service() {
     override fun onDestroy() {
         isRunning.set(false)
         compositeDisposable.clear()
-        if (!scanDisposable.isDisposed) scanDisposable.dispose()
+        if (scanDisposable?.isDisposed == false) scanDisposable?.dispose()
         bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
             Timber.d("Advertising stopped")
         }
@@ -246,28 +242,23 @@ class BleScanService() : Service() {
         super.onDestroy()
     }
 
-    private fun observeStatus() {
-
-        /*
-            if (rxBleClient.state == RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED) {
-                 showEnableLocationToast()
-             }
-
-             rxBleClient.observeStateChanges()
-                 .subscribe {
-                     when(it){
-                         RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED -> {
-                                 showEnableLocationToast()
-                                 scanDisposable.dispose()
-                         }
-                         RxBleClient.State.READY -> {
-                             scanDisposable = scanLeDevice()
-                         }
-                         else -> {
-                             Timber.d("Problem with: ${it.name}")
-                         }
-                     }
-                 }.addTo(compositeDisposable)*/
+    private fun observeLocationStatus() {
+        bluetoothScanner.trackLocationStatus.subscribe(
+            {
+                Timber.d("-BT- Location status: $it")
+                when (it) {
+                    LocationStatus.NOT_READY -> {
+                        showEnableLocationToast()
+                        scanDisposable?.dispose()
+                    }
+                    LocationStatus.READY -> {
+                        scanDisposable = scanLeDevice()
+                    }
+                }
+            }, {
+                Timber.e(it)
+            }
+        ).addTo(compositeDisposable)
     }
 
     private fun showEnableLocationToast() {
