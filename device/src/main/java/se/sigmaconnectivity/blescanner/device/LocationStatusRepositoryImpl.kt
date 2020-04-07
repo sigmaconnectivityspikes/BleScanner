@@ -9,9 +9,11 @@ import android.os.Build
 import android.provider.Settings
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
+import se.sigmaconnectivity.blescanner.domain.LocationStatusRepository
+import se.sigmaconnectivity.blescanner.domain.model.LocationStatus
 import timber.log.Timber
 
-class LocationStatusRepository(private val context: Context) {
+class LocationStatusRepositoryImpl(private val context: Context) : LocationStatusRepository {
     private val locationStateSubject: BehaviorSubject<LocationStatus> = BehaviorSubject.create()
 
     private val locationProviderReceiver = object: BroadcastReceiver() {
@@ -60,6 +62,6 @@ class LocationStatusRepository(private val context: Context) {
         context.registerReceiver(locationProviderReceiver, filter)
     }
 
-    val trackLocationStatus: Observable<LocationStatus>
+    override val trackLocationStatus: Observable<LocationStatus>
         get() = locationStateSubject.hide()
 }

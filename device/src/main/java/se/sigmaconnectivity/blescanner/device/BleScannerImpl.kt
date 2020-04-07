@@ -8,10 +8,16 @@ import android.os.ParcelUuid
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
+import se.sigmaconnectivity.blescanner.device.converters.toDomainItem
+import se.sigmaconnectivity.blescanner.domain.BleScanner
+import se.sigmaconnectivity.blescanner.domain.model.BLEScanState
+import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
+import se.sigmaconnectivity.blescanner.domain.model.StatusErrorType
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
-class BluetoothScanner(private val context: Context) {
+class BleScannerImpl(private val context: Context) :
+    BleScanner {
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy(LazyThreadSafetyMode.NONE) {
         val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -27,11 +33,9 @@ class BluetoothScanner(private val context: Context) {
         BLEScanState.Stopped
     )
 
-
-
-    private fun startScan(serviceUuid: ParcelUuid) {
+    private fun startScan(serviceUuid: String) {
         val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(serviceUuid)
+            .setServiceUuid(ParcelUuid.fromString(serviceUuid))
             .build()
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
@@ -55,15 +59,15 @@ class BluetoothScanner(private val context: Context) {
         scanningStatusSubject.onNext(BLEScanState.Error(error))
     }
 
-    fun scanBleDevicesWithTimeout(serviceUuid: ParcelUuid, timeoutMillis: Long): Observable<ScanResult> =
+    override fun scanBleDevicesWithTimeout(serviceUuid: String, timeoutMillis: Long): Observable<ScanResultItem> =
         scanBleDevices(serviceUuid).takeUntil(
             Observable.timer(timeoutMillis, TimeUnit.MILLISECONDS)
         )
 
-    val trackScanningStatus: Observable<BLEScanState>
+    override val trackScanningStatus: Observable<BLEScanState>
         get() = scanningStatusSubject.hide()
 
-    private fun scanBleDevices(serviceUuid: ParcelUuid): Observable<ScanResult> =
+    private fun scanBleDevices(serviceUuid: String): Observable<ScanResultItem> =
         scanResultsSubject
             .hide()
             .doOnSubscribe {
@@ -75,7 +79,7 @@ class BluetoothScanner(private val context: Context) {
             }.map {result ->
                 when(result) {
                     is ScanResultWrapper.ScanResultFailure -> throw result.error
-                    is ScanResultWrapper.ScanResultSuccess -> result.scanResult
+                    is ScanResultWrapper.ScanResultSuccess -> result.scanResult.toDomainItem()
                 }
             }
 
