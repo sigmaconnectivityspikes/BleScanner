@@ -115,12 +115,12 @@ class BleScanService() : Service() {
                 )
             }
             .map { if (it == BLEFeatureState.Started) FeatureStatus.ACTIVE else FeatureStatus.INACTIVE }
-            .subscribe { updateNotification(adv = it) }
+            .subscribe({ updateNotification(adv = it) }, { Timber.e(it)})
             .addTo(compositeDisposable)
 
         advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID)
             .map { if (it == BLEFeatureState.Started) FeatureStatus.ACTIVE else FeatureStatus.INACTIVE }
-            .subscribe { updateNotification(adv = it) }
+            .subscribe({ updateNotification(adv = it) }, { Timber.e(it)})
             .addTo(compositeDisposable)
     }
 

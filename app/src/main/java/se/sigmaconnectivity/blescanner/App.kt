@@ -10,7 +10,7 @@ import se.sigmaconnectivity.blescanner.di.appModule
 import se.sigmaconnectivity.blescanner.di.viewModelModule
 import timber.log.Timber
 
-class App: Application() {
+class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
@@ -19,9 +19,7 @@ class App: Application() {
 
         startKoin {
             androidContext(this@App)
-            modules(appModule, dataModule, viewModelModule,
-                deviceModule
-            )
+            modules(appModule, dataModule, viewModelModule, deviceModule)
         }
 
         Stetho.initializeWithDefaults(this)
