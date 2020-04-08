@@ -60,14 +60,14 @@ class BleScanService() : Service() {
 
         isRunning.set(true)
 
-        startAdv()
+        startAdvertising()
 
-        observeLocationStatus()
+        observeLocationProviderStatus()
 
         return START_NOT_STICKY
     }
 
-    private fun startAdv() {
+    private fun startAdvertising() {
         advertiseUidUseCase.execute(Consts.SERVICE_USER_HASH_UUID, Consts.MANUFACTURER_ID)
             .mergeWith(advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID))
             .doOnDispose {
@@ -138,16 +138,7 @@ class BleScanService() : Service() {
         }
     }
 
-    override fun onDestroy() {
-        isRunning.set(false)
-        compositeDisposable.clear()
-        scanResultsObserver.onClear()
-        stopForeground(true)
-        stopSelf()
-        super.onDestroy()
-    }
-
-    private fun observeLocationStatus() {
+    private fun observeLocationProviderStatus() {
         subscribeForLocationStatusUseCase.execute().subscribe(
             {
                 Timber.d("Location status: $it")
@@ -165,5 +156,14 @@ class BleScanService() : Service() {
                 Timber.e(it)
             }
         ).addTo(compositeDisposable)
+    }
+
+    override fun onDestroy() {
+        isRunning.set(false)
+        compositeDisposable.clear()
+        scanResultsObserver.onClear()
+        stopForeground(true)
+        stopSelf()
+        super.onDestroy()
     }
 }
