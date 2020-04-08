@@ -28,7 +28,6 @@ import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
 import se.sigmaconnectivity.blescanner.domain.model.ContactDeviceItem
 import se.sigmaconnectivity.blescanner.domain.model.LocationStatus
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
-import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseTxUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseUidUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.ScanBleDevicesUseCase
@@ -48,7 +47,6 @@ class BleScanService() : Service() {
     }
 
     private val scanResultsObserver: ScanResultsObserver by inject()
-    private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
     private val scanBleDevicesUseCase: ScanBleDevicesUseCase by inject()
     private val subscribeForLocationStatusUseCase: SubscribeForLocationStatusUseCase by inject()
     private val advertiseUidUseCase: AdvertiseUidUseCase by inject()
@@ -106,21 +104,10 @@ class BleScanService() : Service() {
     }
 
     private fun startAdvertising() {
-        getUserIdHashUseCase.execute()
-            .flatMapObservable { userUid ->
-                advertiseUidUseCase.execute(
-                    Consts.SERVICE_USER_HASH_UUID,
-                    Consts.MANUFACTURER_ID,
-                    userUid
-                )
-            }
+        advertiseUidUseCase.execute(Consts.SERVICE_USER_HASH_UUID, Consts.MANUFACTURER_ID)
+            .mergeWith(advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID))
             .map { if (it == BLEFeatureState.Started) FeatureStatus.ACTIVE else FeatureStatus.INACTIVE }
-            .subscribe({ updateNotification(adv = it) }, { Timber.e(it)})
-            .addTo(compositeDisposable)
-
-        advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID)
-            .map { if (it == BLEFeatureState.Started) FeatureStatus.ACTIVE else FeatureStatus.INACTIVE }
-            .subscribe({ updateNotification(adv = it) }, { Timber.e(it)})
+            .subscribe({ updateNotification(adv = it) }, { Timber.e(it) })
             .addTo(compositeDisposable)
     }
 
