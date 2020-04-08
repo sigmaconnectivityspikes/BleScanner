@@ -25,12 +25,12 @@ import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.Consts.SCAN_PERIOD_SEC
 import se.sigmaconnectivity.blescanner.Consts.SCAN_TIMEOUT_SEC
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
-import se.sigmaconnectivity.blescanner.data.toHash
+import se.sigmaconnectivity.blescanner.domain.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.model.ContactDeviceItem
 import se.sigmaconnectivity.blescanner.domain.model.LocationStatus
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
+import se.sigmaconnectivity.blescanner.domain.toHash
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.ScanBleDevicesUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForLocationStatusUseCase
@@ -113,7 +113,7 @@ class BleScanService() : Service() {
             .build()
 
         getUserIdHashUseCase.execute().subscribe({ userUid ->
-            val serviceUUID = UUID.fromString(Consts.SERVICE_UUID)
+            val serviceUUID = UUID.fromString(Consts.SERVICE_USER_HASH_UUID)
             val userIdHash = userUid.toHash()
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
@@ -141,7 +141,7 @@ class BleScanService() : Service() {
             .flatMapSingle {
                 Timber.d("BT- next scan")
                 scanBleDevicesUseCase.execute(
-                    Consts.SERVICE_UUID,
+                    Consts.SERVICE_USER_HASH_UUID,
                     SCAN_TIMEOUT_SEC * 1000L
                 )
                     .filter {

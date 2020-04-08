@@ -1,7 +1,7 @@
-package se.sigmaconnectivity.blescanner.domain
+package se.sigmaconnectivity.blescanner.domain.ble
 
 import io.reactivex.Observable
-import se.sigmaconnectivity.blescanner.domain.model.BLEScanState
+import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 
 interface BleScanner {
@@ -10,5 +10,5 @@ interface BleScanner {
         timeoutMillis: Long
     ): Observable<ScanResultItem>
 
-    val trackScanningStatus: Observable<BLEScanState>
+    val trackScanningStatus: Observable<BLEFeatureState>
 }

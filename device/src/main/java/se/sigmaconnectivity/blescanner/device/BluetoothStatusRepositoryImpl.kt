@@ -2,13 +2,14 @@ package se.sigmaconnectivity.blescanner.device
 
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
-import se.sigmaconnectivity.blescanner.domain.BluetoothStatusRepository
+import se.sigmaconnectivity.blescanner.domain.ble.BluetoothStatusRepository
 import se.sigmaconnectivity.blescanner.domain.model.BluetoothStatus
 
 /**
  * Assume that this class will be a singleton in DI
  */
-class BluetoothStatusRepositoryImpl: BluetoothStatusRepository {
+class BluetoothStatusRepositoryImpl:
+    BluetoothStatusRepository {
 
     private val statusSubject = PublishSubject.create<BluetoothStatus>()
 

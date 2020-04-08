@@ -5,19 +5,20 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import io.reactivex.Observable
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
-import se.sigmaconnectivity.blescanner.device.BLEFeatureState
-import se.sigmaconnectivity.blescanner.device.StatusErrorType
+import se.sigmaconnectivity.blescanner.domain.ble.AdvertiserData
+import se.sigmaconnectivity.blescanner.domain.ble.BleAdvertiser
+import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
+import se.sigmaconnectivity.blescanner.domain.model.StatusErrorType
 import timber.log.Timber
 
-abstract class BluetoothAdvertiser {
+abstract class BleAdvertiserImpl: BleAdvertiser {
 
-    protected val compositeDisposable = CompositeDisposable()
     protected val advertisingStatusSubject: BehaviorSubject<BLEFeatureState> =
         BehaviorSubject.createDefault(BLEFeatureState.Stopped)
 
     protected abstract val bluetoothLeAdvertiser: BluetoothLeAdvertiser?
+    protected abstract val settings: AdvertiseSettings
 
     private val advertiseCallback: AdvertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
@@ -35,21 +36,23 @@ abstract class BluetoothAdvertiser {
         }
     }
 
-    val trackScanningStatus: Observable<BLEFeatureState>
+    private val trackScanningStatus: Observable<BLEFeatureState>
         get() = advertisingStatusSubject.hide()
 
-    protected open fun startAdvertising(settings: AdvertiseSettings, data: AdvertiseData): Observable<BLEFeatureState> {
-        Timber.d("BT-startAdvertising")
-        Timber.d("BT-Advertise data value $data")
+    override fun startAdvertising(advertiserData: AdvertiserData): Observable<BLEFeatureState> {
+        val data = buildData(advertiserData)
+        Timber.d("BT-Advertise data value $advertiserData")
         bluetoothLeAdvertiser?.startAdvertising(settings, data, advertiseCallback) ?: run {
             advertisingStatusSubject.onNext(BLEFeatureState.Error(StatusErrorType.ILLEGAL_BLUETOOTH_STATE))
         }
+        Timber.d("BT-Advertiser started")
         return trackScanningStatus
     }
 
-    open fun stopAdv() {
+    protected abstract fun buildData(data: AdvertiserData): AdvertiseData
+
+    override fun stopAdvertising() {
         bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
-        compositeDisposable.clear()
         Timber.d("Advertiser stopped")
     }
 

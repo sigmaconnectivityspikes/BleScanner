@@ -2,15 +2,19 @@ package se.sigmaconnectivity.blescanner.device
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.*
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
 import se.sigmaconnectivity.blescanner.device.converters.toDomainItem
-import se.sigmaconnectivity.blescanner.domain.BleScanner
-import se.sigmaconnectivity.blescanner.domain.model.BLEScanState
+import se.sigmaconnectivity.blescanner.domain.ble.BleScanner
+import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.model.StatusErrorType
 import timber.log.Timber
@@ -29,8 +33,8 @@ class BleScannerImpl(private val context: Context) :
     }
     private val scanResultsSubject: PublishSubject<ScanResultWrapper> = PublishSubject.create()
 
-    private val scanningStatusSubject: BehaviorSubject<BLEScanState> = BehaviorSubject.createDefault(
-        BLEScanState.Stopped
+    private val scanningStatusSubject: BehaviorSubject<BLEFeatureState> = BehaviorSubject.createDefault(
+        BLEFeatureState.Stopped
     )
 
     private fun startScan(serviceUuid: String) {
@@ -45,7 +49,7 @@ class BleScannerImpl(private val context: Context) :
             } catch (e: Exception) {
                 onScanError(e)
             }
-            scanningStatusSubject.onNext(BLEScanState.Started)
+            scanningStatusSubject.onNext(BLEFeatureState.Started)
         } ?: run { onScanError(java.lang.IllegalStateException("Couldn't get BLE scanner")) }
     }
 
@@ -56,7 +60,7 @@ class BleScannerImpl(private val context: Context) :
             onScanError(e)
             return
         }
-        scanningStatusSubject.onNext(BLEScanState.Stopped)
+        scanningStatusSubject.onNext(BLEFeatureState.Stopped)
     }
 
     private fun onScanError(error: Throwable) {
@@ -69,7 +73,7 @@ class BleScannerImpl(private val context: Context) :
             is IllegalStateException -> StatusErrorType.ILLEGAL_BLUETOOTH_STATE
             else -> StatusErrorType.UNKNOWN
         }
-        scanningStatusSubject.onNext(BLEScanState.Error(errorType))
+        scanningStatusSubject.onNext(BLEFeatureState.Error(errorType))
     }
 
     override fun scanBleDevicesWithTimeout(serviceUuid: String, timeoutMillis: Long): Observable<ScanResultItem> =
@@ -77,7 +81,7 @@ class BleScannerImpl(private val context: Context) :
             Observable.timer(timeoutMillis, TimeUnit.MILLISECONDS)
         )
 
-    override val trackScanningStatus: Observable<BLEScanState>
+    override val trackScanningStatus: Observable<BLEFeatureState>
         get() = scanningStatusSubject.hide()
 
     private fun scanBleDevices(serviceUuid: String): Observable<ScanResultItem> =
