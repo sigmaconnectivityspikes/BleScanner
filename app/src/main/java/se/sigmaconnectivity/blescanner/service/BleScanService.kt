@@ -16,11 +16,6 @@ import android.os.IBinder
 import android.os.ParcelUuid
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
-import com.polidea.rxandroidble2.RxBleClient
-import com.polidea.rxandroidble2.exceptions.BleScanException
-import com.polidea.rxandroidble2.scan.ScanFilter
-import com.polidea.rxandroidble2.scan.ScanResult
-import com.polidea.rxandroidble2.scan.ScanSettings
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
@@ -31,12 +26,14 @@ import se.sigmaconnectivity.blescanner.Consts.SCAN_PERIOD_SEC
 import se.sigmaconnectivity.blescanner.Consts.SCAN_TIMEOUT_SEC
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
-import se.sigmaconnectivity.blescanner.data.isValidChecksum
-import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
+import se.sigmaconnectivity.blescanner.domain.model.ContactDeviceItem
+import se.sigmaconnectivity.blescanner.domain.model.LocationStatus
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.device.ScanBleDevicesUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForLocationStatusUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
 import se.sigmaconnectivity.blescanner.ui.feature.FeatureStatus
 import timber.log.Timber
@@ -51,9 +48,10 @@ class BleScanService() : Service() {
         var isRunning = AtomicBoolean(false)
     }
 
-    private val rxBleClient: RxBleClient by inject()
     private val scanResultsObserver: ScanResultsObserver by inject()
     private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
+    private val scanBleDevicesUseCase: ScanBleDevicesUseCase by inject()
+    private val subscribeForLocationStatusUseCase: SubscribeForLocationStatusUseCase by inject()
 
     //TODO: Use usecase for this conversion
     private val hashConverter: HashConverter by inject()
@@ -61,7 +59,7 @@ class BleScanService() : Service() {
     private var scanStatus = FeatureStatus.INACTIVE
     private var advertiseStatus = FeatureStatus.INACTIVE
 
-    private lateinit var scanDisposable: Disposable
+    private var scanDisposable: Disposable? = null
 
     private val bluetoothAdapter by lazy {
         (getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
@@ -97,16 +95,11 @@ class BleScanService() : Service() {
 
         isRunning.set(true)
 
-        // handle the case when service is started multiply times
-        if (scanStatus == FeatureStatus.INACTIVE) {
-            scanDisposable = scanLeDevice()
-        }
-
         if (advertiseStatus == FeatureStatus.INACTIVE) {
             bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
         }
 
-        observeStatus()
+        observeLocationStatus()
 
         return START_NOT_STICKY
     }
@@ -122,16 +115,15 @@ class BleScanService() : Service() {
         getUserIdHashUseCase.execute().subscribe({ userUid ->
             val serviceUUID = UUID.fromString(Consts.SERVICE_UUID)
             val userIdHash = userUid.toHash()
-            val buffer = ByteBuffer.wrap(userIdHash + userIdHash.toChecksum())
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addManufacturerData(Consts.MANUFACTURER_ID, buffer.array())
+                .addManufacturerData(Consts.MANUFACTURER_ID, userIdHash)
                 .addServiceUuid(ParcelUuid(serviceUUID))
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("BT- Advertise data: ${hashConverter.convert(userIdHash).blockingGet()}")
+            Timber.d("BT- Advertise data: ${hashConverter.convert(userIdHash)}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -144,39 +136,32 @@ class BleScanService() : Service() {
 
     }
 
-    private fun doScan(scanSettings: ScanSettings, scanFilter: ScanFilter, timeoutS: Long) =
-        rxBleClient.scanBleDevices(scanSettings, scanFilter).takeUntil(
-            Observable.timer(timeoutS, TimeUnit.SECONDS)
-        ).doOnError {
-            Timber.w(it, "-BT-  Scan  error")
-        }
-
-    private fun scanLeDevice(): Disposable {
-        val scanSettings = ScanSettings.Builder()
-            .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-            .build()
-        val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid.fromString(Consts.SERVICE_UUID))
-            .build()
-        return Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
+    private fun scanLeDevice(): Disposable =
+        Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
             .flatMapSingle {
                 Timber.d("BT- next scan")
-                doScan(scanSettings, scanFilter, SCAN_TIMEOUT_SEC)
+                scanBleDevicesUseCase.execute(
+                    Consts.SERVICE_UUID,
+                    SCAN_TIMEOUT_SEC * 1000L
+                )
                     .filter {
                         assembleUID(it) != null
                     }
                     .map {
                         val uid = assembleUID(it)
                         checkNotNull(uid)
-                        ScanResultItem(
+                        ContactDeviceItem(
                             timestamp = System.currentTimeMillis(),
                             hashId = uid
                         )
                     }
                     .collect(
                         { HashSet() },
-                        { items: MutableSet<ScanResultItem>, item: ScanResultItem -> items.add(item) })
+                        { items: MutableSet<ContactDeviceItem>, item: ContactDeviceItem ->
+                            items.add(
+                                item
+                            )
+                        })
             }
             .doOnDispose {
                 Timber.d("scanLeDevice disposed")
@@ -190,31 +175,26 @@ class BleScanService() : Service() {
                 },
                 {
                     Timber.d(it, "Device found with error")
-                    if (it is BleScanException) {
-                        updateNotification(scan = FeatureStatus.INACTIVE)
-                    }
+                    updateNotification(scan = FeatureStatus.INACTIVE)
                 }
             )
-    }
 
-    private fun assembleUID(scanResult: ScanResult): String? {
-        val results = scanResult.scanRecord.getManufacturerSpecificData(Consts.MANUFACTURER_ID)
+    private fun assembleUID(scanResult: ScanResultItem): String? {
+        val results = scanResult.manufacturerSpecificData[Consts.MANUFACTURER_ID]
         return results?.let {
             //TODO: change it to chained rx invocation
             val bytes = ByteBuffer.allocate(8)
                 .put(it)
-            val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES )
-            val checksum = bytes.array()[HASH_SIZE_BYTES]
-            if (hashBytes.isValidChecksum(checksum)) {
-                val data = hashConverter.convert(hashBytes).blockingGet()
-                data
-            } else {
-                null
-            }
+            val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES)
+            hashConverter.convert(hashBytes)
+
         }
     }
 
-    private fun updateNotification(scan: FeatureStatus = scanStatus, adv: FeatureStatus = advertiseStatus) {
+    private fun updateNotification(
+        scan: FeatureStatus = scanStatus,
+        adv: FeatureStatus = advertiseStatus
+    ) {
         scanStatus = scan
         advertiseStatus = adv
         notificationManager?.notify(Consts.NOTIFICATION_ID, createNotification())
@@ -233,7 +213,13 @@ class BleScanService() : Service() {
             .setContentTitle(getString(R.string.app_name))
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText(getString(R.string.notification_content, getString(scanStatus.nameRes), getString(advertiseStatus.nameRes)))
+                    .bigText(
+                        getString(
+                            R.string.notification_content,
+                            getString(scanStatus.nameRes),
+                            getString(advertiseStatus.nameRes)
+                        )
+                    )
             )
             .setContentIntent(pendingIntent)
             .build()
@@ -242,7 +228,7 @@ class BleScanService() : Service() {
     override fun onDestroy() {
         isRunning.set(false)
         compositeDisposable.clear()
-        if (!scanDisposable.isDisposed) scanDisposable.dispose()
+        if (scanDisposable?.isDisposed == false) scanDisposable?.dispose()
         bluetoothAdapter?.bluetoothLeAdvertiser?.stopAdvertising(mAdvertiseCallback).also {
             Timber.d("Advertising stopped")
             updateNotification(adv = FeatureStatus.INACTIVE)
@@ -253,26 +239,24 @@ class BleScanService() : Service() {
         super.onDestroy()
     }
 
-    private fun observeStatus() {
-        if (rxBleClient.state == RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED) {
-            showEnableLocationToast()
-        }
-
-        rxBleClient.observeStateChanges()
-            .subscribe {
-                when(it){
-                    RxBleClient.State.LOCATION_SERVICES_NOT_ENABLED -> {
-                            showEnableLocationToast()
-                            scanDisposable.dispose()
+    private fun observeLocationStatus() {
+        subscribeForLocationStatusUseCase.execute().subscribe(
+            {
+                Timber.d("-BT- Location status: $it")
+                when (it) {
+                    LocationStatus.NOT_READY -> {
+                        showEnableLocationToast()
+                        scanDisposable?.dispose()
                     }
-                    RxBleClient.State.READY -> {
+                    LocationStatus.READY -> {
                         scanDisposable = scanLeDevice()
                     }
-                    else -> {
-                        Timber.d("Problem with: ${it.name}")
-                    }
+                    else -> throw IllegalStateException("Unknown location status")
                 }
-            }.addTo(compositeDisposable)
+            }, {
+                Timber.e(it)
+            }
+        ).addTo(compositeDisposable)
     }
 
     private fun showEnableLocationToast() {
