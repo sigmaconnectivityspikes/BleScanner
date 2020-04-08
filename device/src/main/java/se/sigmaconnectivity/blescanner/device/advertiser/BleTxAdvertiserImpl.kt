@@ -7,11 +7,11 @@ import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
 import io.reactivex.Observable
-import se.sigmaconnectivity.blescanner.device.BLEFeatureState
+import se.sigmaconnectivity.blescanner.domain.ble.BleTxAdvertiser
+import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
 import java.util.*
 
-class BluetoothUIDAdvertiser(private val context: Context) : BluetoothAdvertiser() {
-
+class BleTxAdvertiserImpl(private val context: Context) : BleAdvertiser(), BleTxAdvertiser {
     override val bluetoothLeAdvertiser: BluetoothLeAdvertiser? by lazy(LazyThreadSafetyMode.NONE) {
         val bluetoothManager =
             context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -25,21 +25,17 @@ class BluetoothUIDAdvertiser(private val context: Context) : BluetoothAdvertiser
         .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW)
         .build()
 
-
-    fun startAdvertising(serviceUUID: UUID, manufacturerId: Int, userUid: ByteArray): Observable<BLEFeatureState> {
-        val data: AdvertiseData = buildData(serviceUUID, manufacturerId, userUid)
+    override fun startAdvertising(serviceUUID: String): Observable<BLEFeatureState> {
+        val data = buildData(UUID.fromString(serviceUUID))
         return super.startAdvertising(settings, data)
     }
 
     private fun buildData(
-        serviceUUID: UUID,
-        manufacturerId: Int,
-        userUid: ByteArray
+        serviceUUID: UUID
     ): AdvertiseData {
         return AdvertiseData.Builder()
             .setIncludeDeviceName(false)
-            .setIncludeTxPowerLevel(false)
-            .addManufacturerData(manufacturerId, userUid)
+            .setIncludeTxPowerLevel(true)
             .addServiceUuid(ParcelUuid(serviceUUID))
             .build()
     }

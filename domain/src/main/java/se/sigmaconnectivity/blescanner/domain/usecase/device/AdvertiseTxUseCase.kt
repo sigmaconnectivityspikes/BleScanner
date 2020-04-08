@@ -2,17 +2,17 @@ package se.sigmaconnectivity.blescanner.domain.usecase.device
 
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
-import se.sigmaconnectivity.blescanner.domain.ble.BluetoothStatusRepository
+import se.sigmaconnectivity.blescanner.domain.ble.BleTxAdvertiser
 import se.sigmaconnectivity.blescanner.domain.executor.PostExecutionThread
-import se.sigmaconnectivity.blescanner.domain.model.BluetoothStatus
+import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
 
-class SubscribeForBluetoothStatusUseCase(
+class AdvertiseTxUseCase(
     private val postExecutionThread: PostExecutionThread,
-    private val repository: BluetoothStatusRepository
+    private val bleUidAdvertiser: BleTxAdvertiser
 ) {
 
-    fun execute(): Observable<BluetoothStatus> =
-        repository.getBluetoothStatus()
+    fun execute(serviceUUID: String): Observable<BLEFeatureState> =
+        bleUidAdvertiser.startAdvertising(serviceUUID)
             .subscribeOn(Schedulers.io())
             .observeOn(postExecutionThread.scheduler)
 }

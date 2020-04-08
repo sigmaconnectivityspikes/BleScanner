@@ -4,16 +4,13 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.AdvertiseCallback
-import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import android.os.ParcelUuid
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import io.reactivex.Observable
@@ -25,13 +22,15 @@ import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.Consts.SCAN_PERIOD_SEC
 import se.sigmaconnectivity.blescanner.Consts.SCAN_TIMEOUT_SEC
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
-import se.sigmaconnectivity.blescanner.data.toHash
+import se.sigmaconnectivity.blescanner.domain.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.domain.HashConverter
+import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
 import se.sigmaconnectivity.blescanner.domain.model.ContactDeviceItem
 import se.sigmaconnectivity.blescanner.domain.model.LocationStatus
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseTxUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseUidUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.ScanBleDevicesUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForLocationStatusUseCase
 import se.sigmaconnectivity.blescanner.ui.MainActivity
@@ -52,6 +51,8 @@ class BleScanService() : Service() {
     private val getUserIdHashUseCase: GetUserIdHashUseCase by inject()
     private val scanBleDevicesUseCase: ScanBleDevicesUseCase by inject()
     private val subscribeForLocationStatusUseCase: SubscribeForLocationStatusUseCase by inject()
+    private val advertiseUidUseCase: AdvertiseUidUseCase by inject()
+    private val advertiseTxUseCase: AdvertiseTxUseCase by inject()
 
     //TODO: Use usecase for this conversion
     private val hashConverter: HashConverter by inject()
@@ -96,7 +97,7 @@ class BleScanService() : Service() {
         isRunning.set(true)
 
         if (advertiseStatus == FeatureStatus.INACTIVE) {
-            bluetoothAdapter?.let { startAdv(it) } ?: Timber.e("BT not supported")
+            bluetoothAdapter?.let { startAdvertising() } ?: Timber.e("BT not supported")
         }
 
         observeLocationStatus()
@@ -104,43 +105,30 @@ class BleScanService() : Service() {
         return START_NOT_STICKY
     }
 
-    private fun startAdv(mBluetoothAdapter: BluetoothAdapter) {
-        val settings = AdvertiseSettings.Builder()
-            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
-            .setConnectable(false)
-            .setTimeout(0)
-            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_LOW)
-            .build()
+    private fun startAdvertising() {
+        getUserIdHashUseCase.execute()
+            .flatMapObservable { userUid ->
+                advertiseUidUseCase.execute(
+                    Consts.SERVICE_USER_HASH_UUID,
+                    Consts.MANUFACTURER_ID,
+                    userUid
+                )
+            }
+            .map { if (it == BLEFeatureState.Started) FeatureStatus.ACTIVE else FeatureStatus.INACTIVE }
+            .subscribe { updateNotification(adv = it) }
+            .addTo(compositeDisposable)
 
-        getUserIdHashUseCase.execute().subscribe({ userUid ->
-            val serviceUUID = UUID.fromString(Consts.SERVICE_UUID)
-            val userIdHash = userUid.toHash()
-            val data: AdvertiseData = AdvertiseData.Builder()
-                .setIncludeDeviceName(false)
-                .setIncludeTxPowerLevel(false)
-                .addManufacturerData(Consts.MANUFACTURER_ID, userIdHash)
-                .addServiceUuid(ParcelUuid(serviceUUID))
-                .build()
-
-            Timber.d("Advertise data value $data")
-            Timber.d("Advertise hash data: ${hashConverter.convert(userIdHash)}")
-
-            mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
-                settings,
-                data,
-                mAdvertiseCallback
-            )
-        }, {
-            Timber.e(it)
-        }).addTo(compositeDisposable)
-
+        advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID)
+            .map { if (it == BLEFeatureState.Started) FeatureStatus.ACTIVE else FeatureStatus.INACTIVE }
+            .subscribe { updateNotification(adv = it) }
+            .addTo(compositeDisposable)
     }
 
     private fun scanLeDevice(): Disposable =
         Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
             .flatMapSingle {
                 scanBleDevicesUseCase.execute(
-                    Consts.SERVICE_UUID,
+                    Consts.SERVICE_USER_HASH_UUID,
                     SCAN_TIMEOUT_SEC * 1000L
                 )
                     .filter {

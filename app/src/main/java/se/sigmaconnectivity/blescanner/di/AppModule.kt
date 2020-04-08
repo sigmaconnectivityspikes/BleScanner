@@ -4,7 +4,18 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import se.sigmaconnectivity.blescanner.domain.executor.PostExecutionThread
-import se.sigmaconnectivity.blescanner.domain.usecase.*
+import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCaseImpl
+import se.sigmaconnectivity.blescanner.domain.usecase.GetHumanReadableUserIdUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.HasUserHadContactWithInfectedUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.NotifyInfectionUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.TrackHasUserHadContactWithInfectedUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCaseImpl
+import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseTxUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseUidUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.ScanBleDevicesUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForBluetoothStatusUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForLocationStatusUseCase
@@ -28,6 +39,8 @@ val appModule = module {
     factory { SubscribeForBluetoothStatusUseCase(get(), get()) }
     factory { ScanBleDevicesUseCase(get(), get()) }
     factory { SubscribeForLocationStatusUseCase(get(), get()) }
+    factory { AdvertiseUidUseCase(get(), get()) }
+    factory { AdvertiseTxUseCase(get(), get()) }
 }
 
 val viewModelModule = module {

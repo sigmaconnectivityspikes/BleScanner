@@ -5,15 +5,12 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import io.reactivex.Observable
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.subjects.BehaviorSubject
-import se.sigmaconnectivity.blescanner.device.BLEFeatureState
-import se.sigmaconnectivity.blescanner.device.StatusErrorType
+import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
+import se.sigmaconnectivity.blescanner.domain.model.StatusErrorType
 import timber.log.Timber
 
-abstract class BluetoothAdvertiser {
-
-    protected val compositeDisposable = CompositeDisposable()
+abstract class BleAdvertiser {
     protected val advertisingStatusSubject: BehaviorSubject<BLEFeatureState> =
         BehaviorSubject.createDefault(BLEFeatureState.Stopped)
 
@@ -35,7 +32,7 @@ abstract class BluetoothAdvertiser {
         }
     }
 
-    val trackScanningStatus: Observable<BLEFeatureState>
+    private val trackScanningStatus: Observable<BLEFeatureState>
         get() = advertisingStatusSubject.hide()
 
     protected open fun startAdvertising(settings: AdvertiseSettings, data: AdvertiseData): Observable<BLEFeatureState> {
@@ -49,7 +46,6 @@ abstract class BluetoothAdvertiser {
 
     open fun stopAdv() {
         bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
-        compositeDisposable.clear()
         Timber.d("Advertiser stopped")
     }
 
