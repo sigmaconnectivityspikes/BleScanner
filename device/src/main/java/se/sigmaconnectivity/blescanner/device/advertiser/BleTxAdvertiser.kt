@@ -8,7 +8,7 @@ import android.content.Context
 import android.os.ParcelUuid
 import se.sigmaconnectivity.blescanner.domain.ble.AdvertiserData
 
-class BleTxAdvertiser(private val context: Context) : BleAdvertiserImpl() {
+class BleTxAdvertiser(private val context: Context) : BaseBleAdvertiser() {
     override val bluetoothLeAdvertiser: BluetoothLeAdvertiser? by lazy(LazyThreadSafetyMode.NONE) {
         val bluetoothManager =
             context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager

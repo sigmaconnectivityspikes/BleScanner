@@ -12,7 +12,7 @@ import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
 import se.sigmaconnectivity.blescanner.domain.model.StatusErrorType
 import timber.log.Timber
 
-abstract class BleAdvertiserImpl: BleAdvertiser {
+abstract class BaseBleAdvertiser: BleAdvertiser {
 
     protected val advertisingStatusSubject: BehaviorSubject<BLEFeatureState> =
         BehaviorSubject.createDefault(BLEFeatureState.Stopped)
