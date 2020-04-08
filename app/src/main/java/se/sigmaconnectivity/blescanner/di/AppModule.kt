@@ -21,6 +21,7 @@ import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseUidUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.ScanBleDevicesUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForBluetoothStatusUseCase
 import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForLocationStatusUseCase
+import se.sigmaconnectivity.blescanner.notification.BleNotificationManager
 import se.sigmaconnectivity.blescanner.service.ScanResultsObserver
 import se.sigmaconnectivity.blescanner.ui.MainViewModel
 import se.sigmaconnectivity.blescanner.ui.help.HelpViewModel
@@ -28,6 +29,7 @@ import se.sigmaconnectivity.blescanner.ui.home.HomeViewModel
 
 val appModule = module {
     single { ScanResultsObserver( get()) }
+    single { BleNotificationManager(get()) }
 
     factory<PostExecutionThread> { se.sigmaconnectivity.blescanner.executor.PostExecutionThread() }
     factory<ContactUseCase> { ContactUseCaseImpl(get(), get()) }

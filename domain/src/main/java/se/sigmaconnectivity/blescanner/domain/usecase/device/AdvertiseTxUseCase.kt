@@ -15,6 +15,7 @@ class AdvertiseTxUseCase(
     fun execute(serviceUUID: String): Observable<BLEFeatureState> {
         val data = TxAdvertiserData(serviceUUID)
         return bleAdvertiser.startAdvertising(data)
+            .doOnDispose { bleAdvertiser.stopAdvertising() }
             .subscribeOn(Schedulers.io())
             .observeOn(postExecutionThread.scheduler)
     }
