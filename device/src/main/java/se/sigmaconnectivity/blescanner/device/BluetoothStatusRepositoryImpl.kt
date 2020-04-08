@@ -8,8 +8,7 @@ import se.sigmaconnectivity.blescanner.domain.model.BluetoothStatus
 /**
  * Assume that this class will be a singleton in DI
  */
-class BluetoothStatusRepositoryImpl:
-    BluetoothStatusRepository {
+class BluetoothStatusRepositoryImpl: BluetoothStatusRepository {
 
     private val statusSubject = PublishSubject.create<BluetoothStatus>()
 

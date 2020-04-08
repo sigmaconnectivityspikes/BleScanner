@@ -41,7 +41,7 @@ abstract class BleAdvertiserImpl: BleAdvertiser {
 
     override fun startAdvertising(advertiserData: AdvertiserData): Observable<BLEFeatureState> {
         val data = buildData(advertiserData)
-        Timber.d("BT-Advertise data value $advertiserData")
+        Timber.d("BT-Advertise data value $data")
         bluetoothLeAdvertiser?.startAdvertising(settings, data, advertiseCallback) ?: run {
             advertisingStatusSubject.onNext(BLEFeatureState.Error(StatusErrorType.ILLEGAL_BLUETOOTH_STATE))
         }
