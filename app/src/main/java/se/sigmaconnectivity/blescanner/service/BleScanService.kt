@@ -26,8 +26,6 @@ import se.sigmaconnectivity.blescanner.Consts.SCAN_PERIOD_SEC
 import se.sigmaconnectivity.blescanner.Consts.SCAN_TIMEOUT_SEC
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.data.HASH_SIZE_BYTES
-import se.sigmaconnectivity.blescanner.data.isValidChecksum
-import se.sigmaconnectivity.blescanner.data.toChecksum
 import se.sigmaconnectivity.blescanner.data.toHash
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.model.ContactDeviceItem
@@ -117,11 +115,10 @@ class BleScanService() : Service() {
         getUserIdHashUseCase.execute().subscribe({ userUid ->
             val serviceUUID = UUID.fromString(Consts.SERVICE_UUID)
             val userIdHash = userUid.toHash()
-            val buffer = ByteBuffer.wrap(userIdHash + userIdHash.toChecksum())
             val data: AdvertiseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addManufacturerData(Consts.MANUFACTURER_ID, buffer.array())
+                .addManufacturerData(Consts.MANUFACTURER_ID, userIdHash)
                 .addServiceUuid(ParcelUuid(serviceUUID))
                 .build()
 
@@ -189,12 +186,8 @@ class BleScanService() : Service() {
             val bytes = ByteBuffer.allocate(8)
                 .put(it)
             val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES)
-            val checksum = bytes.array()[HASH_SIZE_BYTES]
-            if (hashBytes.isValidChecksum(checksum)) {
-                hashConverter.convert(hashBytes)
-            } else {
-                null
-            }
+            hashConverter.convert(hashBytes)
+
         }
     }
 
@@ -258,6 +251,7 @@ class BleScanService() : Service() {
                     LocationStatus.READY -> {
                         scanDisposable = scanLeDevice()
                     }
+                    else -> throw IllegalStateException("Unknown location status")
                 }
             }, {
                 Timber.e(it)
