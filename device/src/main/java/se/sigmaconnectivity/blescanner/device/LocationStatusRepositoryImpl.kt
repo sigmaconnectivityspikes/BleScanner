@@ -20,7 +20,7 @@ class LocationStatusRepositoryImpl(private val context: Context) : LocationStatu
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let { action ->
                 if(action == LocationManager.PROVIDERS_CHANGED_ACTION) {
-                    Timber.d("-BT- Location state changed")
+                    Timber.d("Location state change received")
                     verifyLocationEnabled()
                 }
             }
