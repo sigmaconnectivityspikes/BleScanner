@@ -84,10 +84,10 @@ class BleScannerImpl(private val context: Context) :
         scanResultsSubject
             .hide()
             .doOnSubscribe {
-                Timber.d("-BT- startScan ")
+                Timber.d("scanBleDevices started...")
                 startScan(serviceUuid)
             }.doOnDispose {
-                Timber.d("-BT- stopScan ")
+                Timber.d("scanBleDevices done...")
                 stopScan()
             }.map {result ->
                 when(result) {
@@ -95,7 +95,7 @@ class BleScannerImpl(private val context: Context) :
                     is ScanResultWrapper.ScanResultSuccess -> result.scanResult.toDomainItem()
                 }
             }.doOnError {
-                Timber.e(it, "WNASILOWSKILOG error")
+                Timber.e(it, "scanBleDevices error")
             }
 
     private val scanCallback = object: ScanCallback() {
@@ -112,7 +112,6 @@ class BleScannerImpl(private val context: Context) :
     private sealed class ScanResultWrapper {
         class ScanResultSuccess(val scanResult: ScanResult) : ScanResultWrapper()
         class ScanResultFailure(val error: Throwable) : ScanResultWrapper()
-
     }
 }
 
