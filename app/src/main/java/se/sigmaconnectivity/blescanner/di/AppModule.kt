@@ -6,28 +6,15 @@ import org.koin.dsl.module
 import se.sigmaconnectivity.blescanner.device.advertiser.BleTxAdvertiser
 import se.sigmaconnectivity.blescanner.device.advertiser.BleUIDAdvertiser
 import se.sigmaconnectivity.blescanner.domain.executor.PostExecutionThread
-import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCaseImpl
-import se.sigmaconnectivity.blescanner.domain.usecase.GetHumanReadableUserIdUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.GetUserIdHashUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.HasUserHadContactWithInfectedUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.NotifyInfectionUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.TrackHasUserHadContactWithInfectedUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.UserUseCaseImpl
-import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseTxUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseUidUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.device.ScanBleDevicesUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForBluetoothStatusUseCase
-import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForLocationStatusUseCase
+import se.sigmaconnectivity.blescanner.domain.usecase.*
+import se.sigmaconnectivity.blescanner.domain.usecase.device.*
 import se.sigmaconnectivity.blescanner.service.ScanResultsObserver
 import se.sigmaconnectivity.blescanner.ui.MainViewModel
 import se.sigmaconnectivity.blescanner.ui.help.HelpViewModel
 import se.sigmaconnectivity.blescanner.ui.home.HomeViewModel
 
 val appModule = module {
-    single { ScanResultsObserver( get()) }
+    single { ScanResultsObserver( get(), get(), get()) }
 
     factory<PostExecutionThread> { se.sigmaconnectivity.blescanner.executor.PostExecutionThread() }
     factory<ContactUseCase> { ContactUseCaseImpl(get(), get()) }

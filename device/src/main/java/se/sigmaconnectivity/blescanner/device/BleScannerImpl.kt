@@ -91,16 +91,16 @@ class BleScannerImpl(private val context: Context) :
             }.doOnDispose {
                 Timber.d("scanBleDevices done...")
                 stopScan()
-            }.map {result ->
-                when(result) {
+            }.map { result ->
+                when (result) {
                     is ScanResultWrapper.ScanResultFailure -> throw result.error
-                    is ScanResultWrapper.ScanResultSuccess -> result.scanResult.toDomainItem()
+                    is ScanResultWrapper.ScanResultSuccess -> result.scanResult.toDomainItem(System.currentTimeMillis())
                 }
             }.doOnError {
                 Timber.e(it, "scanBleDevices error")
             }
 
-    private val scanCallback = object: ScanCallback() {
+    private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
             scanResultsSubject.onNext(
