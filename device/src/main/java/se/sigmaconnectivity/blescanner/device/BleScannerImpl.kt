@@ -2,7 +2,11 @@ package se.sigmaconnectivity.blescanner.device
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.*
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
 import io.reactivex.Observable
@@ -103,6 +107,20 @@ class BleScannerImpl(private val context: Context) :
     private val scanCallback = object: ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
+
+            if (result.scanRecord?.serviceUuids?.first() == ParcelUuid.fromString("75d04b13-7220-452c-9eaf-99b553166f71")){
+                // test distance
+                val power = result.scanRecord?.txPowerLevel
+                val rssi = result.rssi
+                Timber.d("TX-getTxPowerLevel: %d", power)
+                Timber.d("TX-measured rssi: %d", rssi)
+                val baseDist = power?.minus(rssi)
+                Timber.d("TX-base distance: %d", baseDist)
+                val ef = 2 // environmental factor
+                val advDist = baseDist?.div((10.0*ef))?.let { Math.pow(10.0, it) }
+                Timber.d("TX-adv distance: %f", advDist?.div(1000))
+            }
+
             scanResultsSubject.onNext(
                 ScanResultWrapper.ScanResultSuccess(
                     result
