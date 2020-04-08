@@ -13,12 +13,12 @@ class ScanResultsObserver(private val contactUseCase: ContactUseCase) {
     fun onNewResults(scanResults: Set<ContactDeviceItem>) {
         refreshPendingLostItems(scanResults)
         val newItems = scanResults - existingScanItems
-        Timber.d("-BT- new items found: $newItems")
+        Timber.d("New items found: $newItems")
         newItems.forEach {
             processFirstMatch(it)
         }
         val lostItems = existingScanItems - scanResults
-        Timber.d("-BT- items lost: $lostItems")
+        Timber.d("Items lost: $lostItems")
         lostItems.forEach {
             val timestampMillis = System.currentTimeMillis()
             processMatchLost(it.copy(timestamp = timestampMillis))
@@ -36,8 +36,7 @@ class ScanResultsObserver(private val contactUseCase: ContactUseCase) {
     private val pendingLostItems = HashMap<ContactDeviceItem, Int>()
 
     private fun processFirstMatch(item: ContactDeviceItem) {
-        Timber.d("CALLBACK_TYPE_FIRST_MATCH: ${item.hashId}")
-        Timber.d("BT- adding $item")
+        Timber.d("First contact match: $item")
         existingScanItems.add(item)
         contactUseCase.processContactMatch(item.hashId, item.timestamp)
             .subscribe({
@@ -48,11 +47,11 @@ class ScanResultsObserver(private val contactUseCase: ContactUseCase) {
     }
 
     private fun processMatchLost(item: ContactDeviceItem) {
-        Timber.d("CALLBACK_TYPE_MATCH_LOST: ${item.hashId}")
+        Timber.d("Processing contact lost item: ${item.hashId}")
             val previousValue = pendingLostItems[item] ?: 0
             pendingLostItems[item] =  previousValue + 1
         if (pendingLostItems[item] == Consts.MARK_LOST_AFTER_RETRIES) {
-            Timber.d("BT- removing $item")
+            Timber.d("Item confirmed as lost: $item")
             pendingLostItems.remove(item)
             existingScanItems.remove(item)
             contactUseCase.processContactLost(item.hashId, item.timestamp)

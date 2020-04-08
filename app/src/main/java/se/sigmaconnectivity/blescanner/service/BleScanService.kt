@@ -123,7 +123,7 @@ class BleScanService() : Service() {
                 .build()
 
             Timber.d("Advertise data value $data")
-            Timber.d("BT- Advertise data: ${hashConverter.convert(userIdHash)}")
+            Timber.d("Advertise hash data: ${hashConverter.convert(userIdHash)}")
 
             mBluetoothAdapter.bluetoothLeAdvertiser.startAdvertising(
                 settings,
@@ -139,7 +139,6 @@ class BleScanService() : Service() {
     private fun scanLeDevice(): Disposable =
         Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
             .flatMapSingle {
-                Timber.d("BT- next scan")
                 scanBleDevicesUseCase.execute(
                     Consts.SERVICE_USER_HASH_UUID,
                     SCAN_TIMEOUT_SEC * 1000L
@@ -242,7 +241,7 @@ class BleScanService() : Service() {
     private fun observeLocationStatus() {
         subscribeForLocationStatusUseCase.execute().subscribe(
             {
-                Timber.d("-BT- Location status: $it")
+                Timber.d("Location status: $it")
                 when (it) {
                     LocationStatus.NOT_READY -> {
                         showEnableLocationToast()
