@@ -36,7 +36,7 @@ abstract class BleAdvertiserImpl: BleAdvertiser {
         }
     }
 
-    private val trackScanningStatus: Observable<BLEFeatureState>
+    private val trackAdvertisingStatus: Observable<BLEFeatureState>
         get() = advertisingStatusSubject.hide()
 
     override fun startAdvertising(advertiserData: AdvertiserData): Observable<BLEFeatureState> {
@@ -46,7 +46,7 @@ abstract class BleAdvertiserImpl: BleAdvertiser {
             advertisingStatusSubject.onNext(BLEFeatureState.Error(StatusErrorType.ILLEGAL_BLUETOOTH_STATE))
         }
         Timber.d("BT-Advertiser started")
-        return trackScanningStatus
+        return trackAdvertisingStatus
     }
 
     protected abstract fun buildData(data: AdvertiserData): AdvertiseData

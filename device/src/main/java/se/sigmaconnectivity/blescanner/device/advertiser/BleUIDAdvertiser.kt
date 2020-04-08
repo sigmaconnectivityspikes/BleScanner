@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.ParcelUuid
 import se.sigmaconnectivity.blescanner.domain.ble.AdvertiserData
 import se.sigmaconnectivity.blescanner.domain.ble.UidAdvertiserData
+import se.sigmaconnectivity.blescanner.domain.toHash
 
 class BleUIDAdvertiser(private val context: Context) : BleAdvertiserImpl() {
 
@@ -29,7 +30,7 @@ class BleUIDAdvertiser(private val context: Context) : BleAdvertiserImpl() {
         return AdvertiseData.Builder()
             .setIncludeDeviceName(false)
             .setIncludeTxPowerLevel(false)
-            .addManufacturerData(data.manufacturerId, data.userUid)
+            .addManufacturerData(data.manufacturerId, data.userUid.toHash())
             .addServiceUuid(ParcelUuid.fromString(data.serviceUUID))
             .build()
     }

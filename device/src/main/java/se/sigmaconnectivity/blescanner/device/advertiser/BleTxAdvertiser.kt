@@ -7,7 +7,6 @@ import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
 import se.sigmaconnectivity.blescanner.domain.ble.AdvertiserData
-import se.sigmaconnectivity.blescanner.domain.ble.AdvertiserDataImpl
 
 class BleTxAdvertiser(private val context: Context) : BleAdvertiserImpl() {
     override val bluetoothLeAdvertiser: BluetoothLeAdvertiser? by lazy(LazyThreadSafetyMode.NONE) {
@@ -23,7 +22,6 @@ class BleTxAdvertiser(private val context: Context) : BleAdvertiserImpl() {
         .build()
 
     override fun buildData(data: AdvertiserData): AdvertiseData {
-        data as AdvertiserDataImpl
         return AdvertiseData.Builder()
             .setIncludeDeviceName(false)
             .setIncludeTxPowerLevel(true)
