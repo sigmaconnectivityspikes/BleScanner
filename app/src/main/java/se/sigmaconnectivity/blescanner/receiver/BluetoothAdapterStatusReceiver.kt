@@ -9,7 +9,7 @@ import androidx.core.content.ContextCompat
 import org.koin.core.KoinComponent
 import org.koin.core.inject
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.domain.BluetoothStatusRepository
+import se.sigmaconnectivity.blescanner.domain.ble.BluetoothStatusRepository
 import se.sigmaconnectivity.blescanner.domain.model.BluetoothStatus
 import se.sigmaconnectivity.blescanner.service.BleScanService
 import timber.log.Timber

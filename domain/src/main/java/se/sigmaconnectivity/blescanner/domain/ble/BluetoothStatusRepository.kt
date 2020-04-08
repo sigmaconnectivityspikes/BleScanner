@@ -1,4 +1,4 @@
-package se.sigmaconnectivity.blescanner.domain
+package se.sigmaconnectivity.blescanner.domain.ble
 
 import io.reactivex.Observable
 import se.sigmaconnectivity.blescanner.domain.model.BluetoothStatus

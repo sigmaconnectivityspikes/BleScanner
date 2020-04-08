@@ -2,7 +2,7 @@ package se.sigmaconnectivity.blescanner.device
 
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
-import se.sigmaconnectivity.blescanner.domain.BluetoothStatusRepository
+import se.sigmaconnectivity.blescanner.domain.ble.BluetoothStatusRepository
 import se.sigmaconnectivity.blescanner.domain.model.BluetoothStatus
 
 /**

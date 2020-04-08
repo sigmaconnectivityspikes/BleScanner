@@ -1,4 +1,4 @@
-package se.sigmaconnectivity.blescanner.data
+package se.sigmaconnectivity.blescanner.domain
 
 import java.security.MessageDigest
 

@@ -2,7 +2,7 @@ package se.sigmaconnectivity.blescanner.domain.usecase.device
 
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
-import se.sigmaconnectivity.blescanner.domain.BluetoothStatusRepository
+import se.sigmaconnectivity.blescanner.domain.ble.BluetoothStatusRepository
 import se.sigmaconnectivity.blescanner.domain.executor.PostExecutionThread
 import se.sigmaconnectivity.blescanner.domain.model.BluetoothStatus
 
