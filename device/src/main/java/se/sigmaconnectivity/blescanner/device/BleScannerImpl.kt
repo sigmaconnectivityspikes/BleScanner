@@ -9,6 +9,7 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
+import android.util.Log
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
@@ -119,6 +120,7 @@ class BleScannerImpl(private val context: Context) :
                 val ef = 2 // environmental factor
                 val advDist = baseDist?.div((10.0*ef))?.let { Math.pow(10.0, it) }
                 Timber.d("TX-adv distance: %f", advDist?.div(1000))
+                Log.d("TX-", "getTxPowerLevel: $power, TX-measured rssi: $rssi, TX-base distance: $baseDist, TX-adv distance: ${advDist?.div(1000)}")
             }
 
             scanResultsSubject.onNext(
