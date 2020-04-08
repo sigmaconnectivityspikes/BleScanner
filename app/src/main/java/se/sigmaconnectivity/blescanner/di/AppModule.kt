@@ -39,7 +39,7 @@ val appModule = module {
     factory { SubscribeForBluetoothStatusUseCase(get(), get()) }
     factory { ScanBleDevicesUseCase(get(), get()) }
     factory { SubscribeForLocationStatusUseCase(get(), get()) }
-    factory { AdvertiseUidUseCase(get(), get()) }
+    factory { AdvertiseUidUseCase(get(), get(), get()) }
     factory { AdvertiseTxUseCase(get(), get()) }
 }
 
