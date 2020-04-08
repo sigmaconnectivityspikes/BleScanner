@@ -157,8 +157,6 @@ dependencies {
     debugImplementation 'com.willowtreeapps.hyperion:hyperion-shared-preferences:0.9.27'
     debugImplementation 'com.willowtreeapps.hyperion:hyperion-timber:0.9.27'
 
-    //crashlytics
-
     implementation project(path: ':data')
     implementation project(path: ":domain")
     implementation project(path: ":device")
