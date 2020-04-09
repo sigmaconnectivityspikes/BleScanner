@@ -10,7 +10,7 @@ import se.sigmaconnectivity.blescanner.domain.ble.AdvertiserData
 import se.sigmaconnectivity.blescanner.domain.ble.TxAdvertiserData
 import se.sigmaconnectivity.blescanner.domain.toHashPrefix
 
-class BleTxAdvertiser(private val context: Context) : BleAdvertiserImpl() {
+class BleTxAdvertiser(private val context: Context) : BaseBleAdvertiser() {
     override val bluetoothLeAdvertiser: BluetoothLeAdvertiser? by lazy(LazyThreadSafetyMode.NONE) {
         val bluetoothManager =
             context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager

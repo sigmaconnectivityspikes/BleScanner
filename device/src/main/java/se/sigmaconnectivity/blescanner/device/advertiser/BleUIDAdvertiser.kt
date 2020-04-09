@@ -12,7 +12,7 @@ import se.sigmaconnectivity.blescanner.domain.toHash
 import java.nio.ByteBuffer
 
 
-class BleUIDAdvertiser(private val context: Context) : BleAdvertiserImpl() {
+class BleUIDAdvertiser(private val context: Context) : BaseBleAdvertiser() {
 
     override val bluetoothLeAdvertiser: BluetoothLeAdvertiser? by lazy(LazyThreadSafetyMode.NONE) {
         val bluetoothManager =
