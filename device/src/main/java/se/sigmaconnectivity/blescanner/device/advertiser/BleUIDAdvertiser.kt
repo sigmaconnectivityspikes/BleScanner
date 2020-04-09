@@ -9,6 +9,8 @@ import android.os.ParcelUuid
 import se.sigmaconnectivity.blescanner.domain.ble.AdvertiserData
 import se.sigmaconnectivity.blescanner.domain.ble.UidAdvertiserData
 import se.sigmaconnectivity.blescanner.domain.toHash
+import java.nio.ByteBuffer
+
 
 class BleUIDAdvertiser(private val context: Context) : BleAdvertiserImpl() {
 
@@ -34,4 +36,9 @@ class BleUIDAdvertiser(private val context: Context) : BleAdvertiserImpl() {
             .addServiceUuid(ParcelUuid.fromString(data.serviceUUID))
             .build()
     }
+
+    private fun Int.bytes(): ByteArray =
+        ByteBuffer.allocate(Int.SIZE_BYTES)
+            .putInt(this)
+            .array()
 }

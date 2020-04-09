@@ -4,6 +4,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.device.DistanceCalculator
+import se.sigmaconnectivity.blescanner.domain.HASH_PREFIX_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.domain.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.model.ContactItem
@@ -21,7 +22,7 @@ class ScanResultsObserver(
 
     fun onNewResults(scanResults: List<ScanResultItem>) {
         val contactItems: Set<ContactItem> = scanResults.toContactItems()
-        Timber.d("Contact items: $contactItems")
+        Timber.d("-DIST- Contact items: $contactItems")
         refreshPendingLostItems(contactItems)
         val newItems = contactItems - existingScanItems
         Timber.d("New items found: $newItems")
@@ -78,38 +79,68 @@ class ScanResultsObserver(
         contactItems.forEach { pendingLostItems.remove(it) }
 
     private fun List<ScanResultItem>.toContactItems(): Set<ContactItem> =
-        groupBy { it.address }
-            .map { (_, entries) ->
-                val distance =
-                    entries.filter { it.serviceUuid == Consts.SERVICE_TX_UUID && it.txPowerLevel != null }
-                        .map {
-                            distanceCalculator.calculate(
-                                rssi = it.rssi,
-                                txPower = it.txPowerLevel ?: 0
-                            )
-                        }.average()
-                val timestamp = entries.map { it.timeStamp }.min()
-                val hashId =
-                    entries.firstOrNull { it.serviceUuid == Consts.SERVICE_USER_HASH_UUID
-                            && it.manufacturerSpecificData[Consts.MANUFACTURER_ID] != null }
-                        ?.let {
-                            assembleUID(it.manufacturerSpecificData[Consts.MANUFACTURER_ID])
-                        }
-                hashId?.let {
-                    checkNotNull(timestamp)
-                    Timber.d("WNASILOWSKILOG Contact items $distance")
-                    ContactItem(it, timestamp, distance)
+        asSequence().map {
+                ProcessedScanItem.createOf(it, hashConverter)
+
+        }.filterNotNull()
+            .groupBy { it.hashId.slice(0 until 8) }
+            .map { (hashId, entries) ->
+                val timestamp = entries.map { it.timestamp }.min()
+                checkNotNull(timestamp)
+                val distances =
+                    entries.filter{it.txPowerLevel != null}.map {
+                        checkNotNull(it.txPowerLevel)
+                        distanceCalculator.calculate(
+                            rssi = it.rssi,
+                            txPower = it.txPowerLevel
+                        )
+                    }
+                val fullHashId = entries.first {it.hashId.length == 16 }.hashId
+                Timber.d("DIST- partial distances: $distances")
+
+                val averageDistance = distances.average()
+
+                ContactItem(
+                    hashId = fullHashId,
+                    timestamp = timestamp,
+                    distance = averageDistance
+                )
+            }.toSet()
+}
+
+data class ProcessedScanItem(
+    val hashId: String,
+    val timestamp: Long,
+    val txPowerLevel: Int?,
+    val rssi: Int
+) {
+    companion object {
+        fun createOf(item: ScanResultItem, hashConverter: HashConverter) = with(item) {
+            val hashId =
+                assembleUID(manufacturerSpecificData[Consts.MANUFACTURER_ID], hashConverter)
+            hashId?.let {
+                ProcessedScanItem(
+                    hashId = it,
+                    txPowerLevel = if (serviceUuid == Consts.SERVICE_TX_UUID) txPowerLevel else null,
+                    timestamp = timestamp,
+                    rssi = rssi
+                )
+            }
+        }
+
+        private fun assembleUID(data: ByteArray?, hashConverter: HashConverter): String? {
+            return data?.let {
+                Timber.d("-DIST- size  ${it.size}")
+                val dataSize = it.size
+                if(dataSize == HASH_SIZE_BYTES || dataSize == HASH_PREFIX_SIZE_BYTES) {
+                    val bytes = ByteBuffer.allocate(dataSize)
+                        .put(it)
+                    val hashBytes = bytes.array().sliceArray(0 until dataSize)
+                    hashConverter.convert(hashBytes)
+                } else {
+                    null
                 }
-            }.filterNotNull().toSet()
-
-
-    private fun assembleUID(data: ByteArray?): String? {
-        return data?.let {
-            //TODO: change it to chained rx invocation
-            val bytes = ByteBuffer.allocate(8)
-                .put(it)
-            val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES)
-            hashConverter.convert(hashBytes)
+            }
         }
     }
 }

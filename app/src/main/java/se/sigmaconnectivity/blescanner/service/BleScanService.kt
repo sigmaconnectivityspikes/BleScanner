@@ -99,7 +99,7 @@ class BleScanService() : Service() {
 
     private fun startAdv() {
         advertiseUidUseCase.execute(Consts.SERVICE_USER_HASH_UUID, Consts.MANUFACTURER_ID)
-            .mergeWith(advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID))
+            .mergeWith(advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID, Consts.MANUFACTURER_ID))
             .map { if (it == BLEFeatureState.Started) FeatureStatus.ACTIVE else FeatureStatus.INACTIVE }
             .subscribe({ updateNotification(adv = it) }, { Timber.e(it) })
             .addTo(compositeDisposable)

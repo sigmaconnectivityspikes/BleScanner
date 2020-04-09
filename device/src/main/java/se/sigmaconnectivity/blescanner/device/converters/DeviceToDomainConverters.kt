@@ -11,10 +11,9 @@ fun ScanResult.toDomainItem(timestamp: Long) =
             manufacturerSpecificData = scanRecord?.manufacturerSpecificData?.toMap() ?: emptyMap(),
             serviceUuid = scanRecord?.serviceUuids?.firstOrNull()?.toString()
                 ?: throw IllegalStateException("Service Uuid has no value"),
-            txPowerLevel = scanRecord?.txPowerLevel,
-            timeStamp = timestamp,
-            address = device.address,
-            rssi = rssi
+            timestamp = timestamp,
+            rssi = rssi,
+            txPowerLevel = scanRecord?.txPowerLevel
         )
     }
 

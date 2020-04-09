@@ -29,7 +29,7 @@ val appModule = module {
     factory { ScanBleDevicesUseCase(get(), get()) }
     factory { SubscribeForLocationStatusUseCase(get(), get()) }
     factory { AdvertiseUidUseCase(get(), get<BleUIDAdvertiser>(), get()) }
-    factory { AdvertiseTxUseCase(get(), get<BleTxAdvertiser>()) }
+    factory { AdvertiseTxUseCase(get(), get<BleTxAdvertiser>(), get()) }
 }
 
 val viewModelModule = module {
