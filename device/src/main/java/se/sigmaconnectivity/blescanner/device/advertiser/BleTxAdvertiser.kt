@@ -20,7 +20,7 @@ class BleTxAdvertiser(private val context: Context) : BaseBleAdvertiser() {
         .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
         .setConnectable(false)
         .setTimeout(0)
-        .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW)
+        .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
         .build()
 
     override fun buildData(data: AdvertiserData): AdvertiseData {

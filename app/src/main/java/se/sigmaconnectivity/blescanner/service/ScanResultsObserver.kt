@@ -84,7 +84,7 @@ class ScanResultsObserver(
 
         }.filterNotNull()
             .groupBy { it.hashId.slice(0 until 8) }
-            .map { (hashId, entries) ->
+            .map { (_, entries) ->
                 val timestamp = entries.map { it.timestamp }.min()
                 checkNotNull(timestamp)
                 val distances =
@@ -95,10 +95,9 @@ class ScanResultsObserver(
                             txPower = it.txPowerLevel
                         )
                     }
-                val fullHashId = entries.first {it.hashId.length == 16 }.hashId
-                Timber.d("DIST- partial distances: $distances")
-
+                Timber.d("DIST-- partial distances: $distances")
                 val averageDistance = distances.average()
+                val fullHashId = entries.first { it.hashId.length == 16 }.hashId
 
                 ContactItem(
                     hashId = fullHashId,
@@ -130,7 +129,6 @@ data class ProcessedScanItem(
 
         private fun assembleUID(data: ByteArray?, hashConverter: HashConverter): String? {
             return data?.let {
-                Timber.d("-DIST- size  ${it.size}")
                 val dataSize = it.size
                 if(dataSize == HASH_SIZE_BYTES || dataSize == HASH_PREFIX_SIZE_BYTES) {
                     val bytes = ByteBuffer.allocate(dataSize)
