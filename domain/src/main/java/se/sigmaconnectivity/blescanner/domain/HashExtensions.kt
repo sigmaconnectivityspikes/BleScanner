@@ -13,3 +13,9 @@ fun String.toHash(): ByteArray {
 }
 
 fun String.toHashPrefix(): ByteArray = toHash().sliceArray(0 until HASH_PREFIX_SIZE_BYTES)
+
+fun ByteArray.asHexString() : String {
+    return this.joinToString("") {
+        java.lang.String.format("%02x", it)
+    }
+}

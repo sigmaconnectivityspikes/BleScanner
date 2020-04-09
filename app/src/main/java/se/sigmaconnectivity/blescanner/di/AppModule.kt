@@ -14,7 +14,7 @@ import se.sigmaconnectivity.blescanner.ui.help.HelpViewModel
 import se.sigmaconnectivity.blescanner.ui.home.HomeViewModel
 
 val appModule = module {
-    single { ScanResultsObserver( get(), get(), get()) }
+    single { ScanResultsObserver( get(), get()) }
 
     factory<PostExecutionThread> { se.sigmaconnectivity.blescanner.executor.PostExecutionThread() }
     factory<ContactUseCase> { ContactUseCaseImpl(get(), get()) }

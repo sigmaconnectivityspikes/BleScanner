@@ -6,17 +6,15 @@ import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.device.DistanceCalculator
 import se.sigmaconnectivity.blescanner.domain.HASH_PREFIX_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.domain.HASH_SIZE_BYTES
-import se.sigmaconnectivity.blescanner.domain.HashConverter
+import se.sigmaconnectivity.blescanner.domain.asHexString
 import se.sigmaconnectivity.blescanner.domain.model.ContactItem
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import timber.log.Timber
-import java.nio.ByteBuffer
 import java.util.*
 
 class ScanResultsObserver(
     private val contactUseCase: ContactUseCase,
-    private val hashConverter: HashConverter,
     private val distanceCalculator: DistanceCalculator
 ) {
 
@@ -80,31 +78,35 @@ class ScanResultsObserver(
 
     private fun List<ScanResultItem>.toContactItems(): Set<ContactItem> =
         asSequence().map {
-                ProcessedScanItem.createOf(it, hashConverter)
+            ProcessedScanItem.createOf(it)
 
         }.filterNotNull()
             .groupBy { it.hashId.slice(0 until 8) }
-            .map { (_, entries) ->
+            .map { (hashPrefix, entries) ->
                 val timestamp = entries.map { it.timestamp }.min()
                 checkNotNull(timestamp)
-                val distances =
-                    entries.filter{it.txPowerLevel != null}.map {
-                        checkNotNull(it.txPowerLevel)
-                        distanceCalculator.calculate(
-                            rssi = it.rssi,
-                            txPower = it.txPowerLevel
-                        )
-                    }
-                Timber.d("DIST-- partial distances: $distances")
-                val averageDistance = distances.average()
-                val fullHashId = entries.first { it.hashId.length == 16 }.hashId
 
-                ContactItem(
-                    hashId = fullHashId,
-                    timestamp = timestamp,
-                    distance = averageDistance
-                )
-            }.toSet()
+                val distances =
+                    entries.filter { it.txPowerLevel != null }.map { item ->
+                        checkNotNull(item.txPowerLevel)
+                        distanceCalculator.calculate(
+                            rssi = item.rssi,
+                            txPower = item.txPowerLevel
+                        ).also { result ->
+                            Timber.d("-DIST-- -Distance hash: $hashPrefix rssi: ${item.rssi} tx power: ${item.txPowerLevel} result: $result")
+                        }
+                    }
+                val averageDistance = distances.average()
+                val fullHashId = entries.firstOrNull { it.hashId.length == 16 }?.hashId
+                fullHashId?.let {
+                    ContactItem(
+                        hashId = it,
+                        timestamp = timestamp,
+                        distance = averageDistance
+                    )
+                }
+            }.filterNotNull()
+            .toSet()
 }
 
 data class ProcessedScanItem(
@@ -114,9 +116,9 @@ data class ProcessedScanItem(
     val rssi: Int
 ) {
     companion object {
-        fun createOf(item: ScanResultItem, hashConverter: HashConverter) = with(item) {
+        fun createOf(item: ScanResultItem) = with(item) {
             val hashId =
-                assembleUID(manufacturerSpecificData[Consts.MANUFACTURER_ID], hashConverter)
+                assembleUID(manufacturerSpecificData[Consts.MANUFACTURER_ID])
             hashId?.let {
                 ProcessedScanItem(
                     hashId = it,
@@ -127,14 +129,11 @@ data class ProcessedScanItem(
             }
         }
 
-        private fun assembleUID(data: ByteArray?, hashConverter: HashConverter): String? {
+        private fun assembleUID(data: ByteArray?): String? {
             return data?.let {
                 val dataSize = it.size
-                if(dataSize == HASH_SIZE_BYTES || dataSize == HASH_PREFIX_SIZE_BYTES) {
-                    val bytes = ByteBuffer.allocate(dataSize)
-                        .put(it)
-                    val hashBytes = bytes.array().sliceArray(0 until dataSize)
-                    hashConverter.convert(hashBytes)
+                if (dataSize == HASH_SIZE_BYTES || dataSize == HASH_PREFIX_SIZE_BYTES) {
+                    it.asHexString()
                 } else {
                     null
                 }
