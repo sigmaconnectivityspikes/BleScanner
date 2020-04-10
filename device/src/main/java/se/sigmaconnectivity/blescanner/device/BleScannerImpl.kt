@@ -2,11 +2,7 @@ package se.sigmaconnectivity.blescanner.device
 
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
-import android.bluetooth.le.BluetoothLeScanner
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
-import android.bluetooth.le.ScanResult
-import android.bluetooth.le.ScanSettings
+import android.bluetooth.le.*
 import android.content.Context
 import android.os.ParcelUuid
 import io.reactivex.Observable
@@ -37,15 +33,17 @@ class BleScannerImpl(private val context: Context) :
         BLEFeatureState.Stopped
     )
 
-    private fun startScan(serviceUuid: String) {
-        val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid.fromString(serviceUuid))
-            .build()
+    private fun startScan(serviceUuids: List<String>) {
+        val scanFilters = serviceUuids.map {
+            ScanFilter.Builder()
+                .setServiceUuid(ParcelUuid.fromString(it))
+                .build()
+        }
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
         bleScanner?.let {
             try {
-                it.startScan(mutableListOf(scanFilter), settings, scanCallback)
+                it.startScan(scanFilters, settings, scanCallback)
             } catch (e: Exception) {
                 onScanError(e)
             }
@@ -76,33 +74,33 @@ class BleScannerImpl(private val context: Context) :
         scanningStatusSubject.onNext(BLEFeatureState.Error(errorType))
     }
 
-    override fun scanBleDevicesWithTimeout(serviceUuid: String, timeoutMillis: Long): Observable<ScanResultItem> =
-        scanBleDevices(serviceUuid).takeUntil(
+    override fun scanBleDevicesWithTimeout(serviceUuids: List<String>, timeoutMillis: Long): Observable<ScanResultItem> =
+        scanBleDevices(serviceUuids).takeUntil(
             Observable.timer(timeoutMillis, TimeUnit.MILLISECONDS)
         )
 
     override val trackScanningStatus: Observable<BLEFeatureState>
         get() = scanningStatusSubject.hide()
 
-    private fun scanBleDevices(serviceUuid: String): Observable<ScanResultItem> =
+    private fun scanBleDevices(serviceUuids: List<String>): Observable<ScanResultItem> =
         scanResultsSubject
             .hide()
             .doOnSubscribe {
                 Timber.d("scanBleDevices started...")
-                startScan(serviceUuid)
+                startScan(serviceUuids)
             }.doOnDispose {
                 Timber.d("scanBleDevices done...")
                 stopScan()
-            }.map {result ->
-                when(result) {
+            }.map { result ->
+                when (result) {
                     is ScanResultWrapper.ScanResultFailure -> throw result.error
-                    is ScanResultWrapper.ScanResultSuccess -> result.scanResult.toDomainItem()
+                    is ScanResultWrapper.ScanResultSuccess -> result.scanResult.toDomainItem(System.currentTimeMillis())
                 }
             }.doOnError {
                 Timber.e(it, "scanBleDevices error")
             }
 
-    private val scanCallback = object: ScanCallback() {
+    private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
             scanResultsSubject.onNext(
@@ -118,4 +116,3 @@ class BleScannerImpl(private val context: Context) :
         class ScanResultFailure(val error: Throwable) : ScanResultWrapper()
     }
 }
-

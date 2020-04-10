@@ -6,9 +6,12 @@ import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.ParcelUuid
+import se.sigmaconnectivity.blescanner.domain.asHexString
 import se.sigmaconnectivity.blescanner.domain.ble.AdvertiserData
 import se.sigmaconnectivity.blescanner.domain.ble.UidAdvertiserData
 import se.sigmaconnectivity.blescanner.domain.toHash
+import timber.log.Timber
+
 
 class BleUIDAdvertiser(private val context: Context) : BaseBleAdvertiser() {
 
@@ -27,6 +30,7 @@ class BleUIDAdvertiser(private val context: Context) : BaseBleAdvertiser() {
 
     override fun buildData(data: AdvertiserData): AdvertiseData {
         data as UidAdvertiserData
+        Timber.d("Advertising hash id: ${data.userUid.toHash().asHexString()}")
         return AdvertiseData.Builder()
             .setIncludeDeviceName(false)
             .setIncludeTxPowerLevel(false)

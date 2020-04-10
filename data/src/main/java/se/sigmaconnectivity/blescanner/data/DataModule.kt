@@ -5,7 +5,6 @@ import org.koin.dsl.module
 import se.sigmaconnectivity.blescanner.data.db.ContactDatabase
 import se.sigmaconnectivity.blescanner.data.db.SharedPrefs
 import se.sigmaconnectivity.blescanner.domain.ContactRepository
-import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.PushNotifier
 import se.sigmaconnectivity.blescanner.domain.UserRepository
 
@@ -16,6 +15,4 @@ val dataModule = module {
     single<PushNotifier> { PushNotifierImpl() }
     single<UserRepository> { UserRepositoryImpl(get()) }
     single { SharedPrefs(androidApplication()) }
-
-    factory<HashConverter> { HexHashConverter() }
 }

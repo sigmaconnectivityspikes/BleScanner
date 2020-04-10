@@ -10,5 +10,4 @@ val deviceModule = module {
     single<BluetoothStatusRepository> { BluetoothStatusRepositoryImpl() }
     single<BleScanner> { BleScannerImpl(androidApplication()) }
     single<LocationStatusRepository> { LocationStatusRepositoryImpl(androidApplication()) }
-
 }

@@ -22,10 +22,7 @@ import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.Consts.SCAN_PERIOD_SEC
 import se.sigmaconnectivity.blescanner.Consts.SCAN_TIMEOUT_SEC
 import se.sigmaconnectivity.blescanner.R
-import se.sigmaconnectivity.blescanner.domain.HASH_SIZE_BYTES
-import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
-import se.sigmaconnectivity.blescanner.domain.model.ContactDeviceItem
 import se.sigmaconnectivity.blescanner.domain.model.LocationStatus
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseTxUseCase
@@ -35,7 +32,6 @@ import se.sigmaconnectivity.blescanner.domain.usecase.device.SubscribeForLocatio
 import se.sigmaconnectivity.blescanner.ui.MainActivity
 import se.sigmaconnectivity.blescanner.ui.feature.FeatureStatus
 import timber.log.Timber
-import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -52,8 +48,6 @@ class BleScanService() : Service() {
     private val advertiseUidUseCase: AdvertiseUidUseCase by inject()
     private val advertiseTxUseCase: AdvertiseTxUseCase by inject()
 
-    //TODO: Use usecase for this conversion
-    private val hashConverter: HashConverter by inject()
     private val compositeDisposable = CompositeDisposable()
     private var scanStatus = FeatureStatus.INACTIVE
     private var advertiseStatus = FeatureStatus.INACTIVE
@@ -105,7 +99,7 @@ class BleScanService() : Service() {
 
     private fun startAdv() {
         advertiseUidUseCase.execute(Consts.SERVICE_USER_HASH_UUID, Consts.MANUFACTURER_ID)
-            .mergeWith(advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID))
+            .mergeWith(advertiseTxUseCase.execute(Consts.SERVICE_TX_UUID, Consts.MANUFACTURER_ID))
             .map { if (it == BLEFeatureState.Started) FeatureStatus.ACTIVE else FeatureStatus.INACTIVE }
             .subscribe({ updateNotification(adv = it) }, { Timber.e(it) })
             .addTo(compositeDisposable)
@@ -115,23 +109,12 @@ class BleScanService() : Service() {
         Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
             .flatMapSingle {
                 scanBleDevicesUseCase.execute(
-                    Consts.SERVICE_USER_HASH_UUID,
+                    listOf(Consts.SERVICE_USER_HASH_UUID, Consts.SERVICE_TX_UUID),
                     SCAN_TIMEOUT_SEC * 1000L
                 )
-                    .filter {
-                        assembleUID(it) != null
-                    }
-                    .map {
-                        val uid = assembleUID(it)
-                        checkNotNull(uid)
-                        ContactDeviceItem(
-                            timestamp = System.currentTimeMillis(),
-                            hashId = uid
-                        )
-                    }
                     .collect(
-                        { HashSet() },
-                        { items: MutableSet<ContactDeviceItem>, item: ContactDeviceItem ->
+                        { ArrayList() },
+                        { items: MutableList<ScanResultItem>, item: ScanResultItem ->
                             items.add(
                                 item
                             )
@@ -152,18 +135,6 @@ class BleScanService() : Service() {
                     updateNotification(scan = FeatureStatus.INACTIVE)
                 }
             )
-
-    private fun assembleUID(scanResult: ScanResultItem): String? {
-        val results = scanResult.manufacturerSpecificData[Consts.MANUFACTURER_ID]
-        return results?.let {
-            //TODO: change it to chained rx invocation
-            val bytes = ByteBuffer.allocate(8)
-                .put(it)
-            val hashBytes = bytes.array().sliceArray(0 until HASH_SIZE_BYTES)
-            hashConverter.convert(hashBytes)
-
-        }
-    }
 
     private fun updateNotification(
         scan: FeatureStatus = scanStatus,

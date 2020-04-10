@@ -5,14 +5,21 @@ import android.util.SparseArray
 import androidx.core.util.forEach
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 
-fun ScanResult.toDomainItem() =
-    ScanResultItem(
-        manufacturerSpecificData = scanRecord?.manufacturerSpecificData?.toMap() ?: emptyMap()
-    )
+fun ScanResult.toDomainItem(timestamp: Long) =
+    with(this) {
+        ScanResultItem(
+            manufacturerSpecificData = scanRecord?.manufacturerSpecificData?.toMap() ?: emptyMap(),
+            serviceUuid = scanRecord?.serviceUuids?.firstOrNull()?.toString()
+                ?: throw IllegalStateException("Service Uuid has no value"),
+            timestamp = timestamp,
+            rssi = rssi,
+            txPowerLevel = scanRecord?.txPowerLevel
+        )
+    }
 
-fun<E> SparseArray<E>.toMap(): Map<Int, E> {
+fun <E> SparseArray<E>.toMap(): Map<Int, E> {
     val list = HashMap<Int, E>()
-    forEach {key, value ->
+    forEach { key, value ->
         list[key] = value
     }
     return list

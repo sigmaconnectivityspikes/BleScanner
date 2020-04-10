@@ -4,6 +4,7 @@ import org.koin.android.ext.koin.androidApplication
 import org.koin.dsl.module
 import se.sigmaconnectivity.blescanner.device.BleScannerImpl
 import se.sigmaconnectivity.blescanner.device.BluetoothStatusRepositoryImpl
+import se.sigmaconnectivity.blescanner.device.DistanceCalculator
 import se.sigmaconnectivity.blescanner.device.LocationStatusRepositoryImpl
 import se.sigmaconnectivity.blescanner.device.advertiser.BleTxAdvertiser
 import se.sigmaconnectivity.blescanner.device.advertiser.BleUIDAdvertiser
@@ -17,4 +18,6 @@ val deviceModule = module {
     single<LocationStatusRepository> { LocationStatusRepositoryImpl(androidApplication()) }
     single { BleUIDAdvertiser(androidApplication()) }
     single { BleTxAdvertiser(androidApplication()) }
+
+    factory { DistanceCalculator() }
 }
