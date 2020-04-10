@@ -20,6 +20,7 @@ class AdvertiseUidUseCase(
                 val data = UidAdvertiserData(serviceUUID, manufacturerId, userUid)
                 bleAdvertiser.startAdvertising(data)
             }
+            .doOnDispose { bleAdvertiser.stopAdvertising() }
             .subscribeOn(Schedulers.io())
             .observeOn(postExecutionThread.scheduler)
 }
