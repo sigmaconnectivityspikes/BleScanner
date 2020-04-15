@@ -2,18 +2,18 @@ package se.sigmaconnectivity.blescanner.data
 
 import io.reactivex.Completable
 import io.reactivex.Single
-import se.sigmaconnectivity.blescanner.data.db.SharedPrefs
+import se.sigmaconnectivity.blescanner.data.db.UserIdStore
 import se.sigmaconnectivity.blescanner.domain.UserRepository
 
 class UserRepositoryImpl(
-    private val sharedPrefs: SharedPrefs
+    private  val userIdStore: UserIdStore
 ) : UserRepository {
 
     override fun getUserHash(): Single<String> = Single.fromCallable {
-        sharedPrefs.getUserHash()
+        userIdStore.userHash
     }
 
-    override fun saveUserHash(hash: String) = Completable.fromCallable {
-        sharedPrefs.setUserHash(hash)
+    override fun saveUserHash(hash: String) = Completable.fromAction {
+        userIdStore.userHash = hash
     }
 }
