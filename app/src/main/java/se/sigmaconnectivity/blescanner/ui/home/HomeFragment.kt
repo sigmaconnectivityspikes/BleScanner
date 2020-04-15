@@ -10,11 +10,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.databinding.DataBindingUtil
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.BuildConfig
-import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.FragmentHomeBinding
 import se.sigmaconnectivity.blescanner.ui.common.BaseFragment
-import timber.log.Timber
 
 
 class HomeFragment : BaseFragment() {
@@ -34,13 +32,6 @@ class HomeFragment : BaseFragment() {
         )
         binding.vm = vm
         binding.lifecycleOwner = this
-
-        activity?.intent?.let {
-            if (!it.getStringExtra(Consts.NOTIFICATION_EXTRA_DATA).isNullOrBlank()) {
-                //TODO impl
-                Timber.d("Data from notification received: ${it.getStringExtra(Consts.NOTIFICATION_EXTRA_DATA)}")
-            }
-        }
 
         setUpWebView()
 

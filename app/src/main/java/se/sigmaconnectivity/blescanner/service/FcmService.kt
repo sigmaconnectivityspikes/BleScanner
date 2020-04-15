@@ -2,17 +2,16 @@ package se.sigmaconnectivity.blescanner.service
 
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import io.reactivex.disposables.CompositeDisposable
+import org.json.JSONObject
 import org.koin.android.ext.android.inject
 import se.sigmaconnectivity.blescanner.data.mapper.hasNotification
 import se.sigmaconnectivity.blescanner.data.mapper.toNotificationDataItem
-import se.sigmaconnectivity.blescanner.ui.common.PushNotificationManager
+import se.sigmaconnectivity.blescanner.domain.usecase.OnPushNotificationUseCase
 import timber.log.Timber
 
 class FcmService : FirebaseMessagingService() {
-    private val compositeDisposable = CompositeDisposable()
 
-    private val notificationManager: PushNotificationManager by inject()
+    private val onPushNotificationUseCase: OnPushNotificationUseCase by inject()
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // TODO(developer): Handle FCM messages here.
@@ -27,10 +26,10 @@ class FcmService : FirebaseMessagingService() {
     private fun handleNotification(remoteMessage: RemoteMessage) {
         if (remoteMessage.data.hasNotification()) {
             remoteMessage.data.toNotificationDataItem().let {
-                notificationManager.showNotificationWithData(
+                onPushNotificationUseCase.execute(
                     it.title,
                     it.content,
-                    remoteMessage.data.toString()
+                    JSONObject(remoteMessage.data as Map<String, String>).toString()
                 )
             }
         }
@@ -46,10 +45,5 @@ class FcmService : FirebaseMessagingService() {
 
     private fun sendRegistrationToServer(token: String?) {
         // TODO: Implement this method to send token to your app server.
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        compositeDisposable.clear()
     }
 }
