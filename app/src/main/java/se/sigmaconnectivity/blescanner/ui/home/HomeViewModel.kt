@@ -20,8 +20,4 @@ class HomeViewModel() : BaseViewModel() {
                 .blockingFirst()
         )*/
     }
-
-    sealed class ErrorEvent {
-        data class Unknown(val message: String) : ErrorEvent()
-    }
 }
