@@ -1,8 +1,6 @@
 package se.sigmaconnectivity.blescanner.ui.home
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -84,13 +82,5 @@ class HomeFragment : BaseFragment() {
         })
     }
 
-    /**
-     * If Bluetooth will be enabled then [BluetoothAdapterStatusReceiver] will automatically start
-     * the [BleScanService]
-     */
-    private fun requestBluetooth() {
-        val requestBluetoothIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        startActivity(requestBluetoothIntent)
-    }
 
 }
