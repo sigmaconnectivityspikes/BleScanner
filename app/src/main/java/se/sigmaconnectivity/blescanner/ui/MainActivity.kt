@@ -19,14 +19,11 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
-import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.MainGraphDirections
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.ActivityMainBinding
-import se.sigmaconnectivity.blescanner.domain.usecase.TrackInfectionsUseCase
-import se.sigmaconnectivity.blescanner.ui.common.livedata.observe
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
@@ -38,7 +35,6 @@ class MainActivity : AppCompatActivity() {
     private val rxPermissions by lazy {
         RxPermissions(this)
     }
-    private val trackInfectionsUseCase: TrackInfectionsUseCase by inject()
 
     private val mainViewModel by viewModel<MainViewModel>()
 
@@ -138,14 +134,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 Timber.d(msg)
             }
-        trackInfectionsUseCase.execute().subscribe({
-            val message = "New infection: $it"
-            Timber.d(message)
-            Toast.makeText(baseContext, message, Toast.LENGTH_LONG).show()
-        },
-            {
-                Timber.e(it)
-            }).addTo(compositeDispose)
+
 
     }
 
@@ -159,7 +148,6 @@ class MainActivity : AppCompatActivity() {
                 navHostFragment.navController
             )
         }*/
-        mainViewModel.showInfectionMessage.observe(this, ::navigateToInfectionMessage)
     }
 
     private fun navigateToInfectionMessage() {

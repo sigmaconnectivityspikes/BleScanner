@@ -8,11 +8,9 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import kotlinx.android.synthetic.main.fragment_help.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.FragmentHelpBinding
-import se.sigmaconnectivity.blescanner.ui.common.livedata.observe
 
 
 class HelpFragment : Fragment() {
@@ -33,17 +31,7 @@ class HelpFragment : Fragment() {
         binding.vm = vm
         binding.lifecycleOwner = this
 
-        initView()
-
         return binding.root
-    }
-
-    private fun initView() {
-        vm.userId.observe(viewLifecycleOwner, ::updateUserId)
-    }
-
-    private fun updateUserId(bitmap: Bitmap) {
-        ivQrCode.setImageBitmap(replaceWhiteWithTransparent(bitmap))
     }
 
     //TODO move to use case

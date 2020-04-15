@@ -3,16 +3,11 @@ package se.sigmaconnectivity.blescanner.service
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.rxkotlin.addTo
-import org.koin.android.ext.android.inject
-import se.sigmaconnectivity.blescanner.data.mapper.toInfectionItem
-import se.sigmaconnectivity.blescanner.domain.usecase.NotifyInfectionUseCase
 import timber.log.Timber
 
 class FcmService : FirebaseMessagingService() {
     private val compositeDisposable = CompositeDisposable()
 
-    private val notifyInfectionUseCase: NotifyInfectionUseCase by inject()
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // TODO(developer): Handle FCM messages here.
@@ -24,15 +19,7 @@ class FcmService : FirebaseMessagingService() {
         }
     }
 
-    private fun handleNotification(remoteMessage: RemoteMessage) {
-        notifyInfectionUseCase.execute(remoteMessage.data.toInfectionItem())
-            .subscribe({
-                Timber.d("Notified new infection")
-            }, {
-                Timber.e(it)
-            }
-            ).addTo(compositeDisposable)
-    }
+    private fun handleNotification(remoteMessage: RemoteMessage) {}
 
     override fun onNewToken(token: String) {
         Timber.d("Refreshed token: $token")
