@@ -11,7 +11,6 @@ class HomeViewModel(
     private val onSetBridgeDataUseCase: OnSetBridgeDataUseCase,
     private val onGetBridgeDataUseCase: OnGetBridgeDataUseCase
     ) : BaseViewModel() {
-
     fun setBridgeData(dataType: Int, dataJson: String) {
         onSetBridgeDataUseCase.execute(IncomingBridgeDataItem(
             type = IncomingBridgeDataType.valueOf(dataType),

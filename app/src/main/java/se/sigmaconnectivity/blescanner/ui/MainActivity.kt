@@ -10,7 +10,6 @@ import androidx.databinding.DataBindingUtil
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessaging
-import io.reactivex.disposables.CompositeDisposable
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.ActivityMainBinding
@@ -18,7 +17,6 @@ import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
-    private val compositeDispose = CompositeDisposable()
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,10 +66,5 @@ class MainActivity : AppCompatActivity() {
                 }
                 Timber.d(msg)
             }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        compositeDispose.clear()
     }
 }
