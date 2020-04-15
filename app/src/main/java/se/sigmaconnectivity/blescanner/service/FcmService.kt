@@ -2,7 +2,7 @@ package se.sigmaconnectivity.blescanner.service
 
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.google.gson.Gson
+import org.json.JSONObject
 import org.koin.android.ext.android.inject
 import se.sigmaconnectivity.blescanner.data.mapper.hasNotification
 import se.sigmaconnectivity.blescanner.data.mapper.toNotificationDataItem
@@ -29,7 +29,7 @@ class FcmService : FirebaseMessagingService() {
                 onPushNotificationUseCase.execute(
                     it.title,
                     it.content,
-                    Gson().toJson(remoteMessage.data)
+                    JSONObject(remoteMessage.data as Map<String, String>).toString()
                 )
             }
         }
