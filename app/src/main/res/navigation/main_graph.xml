@@ -10,16 +10,6 @@
         android:name="se.sigmaconnectivity.blescanner.ui.home.HomeFragment"
         tools:layout="@layout/fragment_home" />
 
-    <fragment
-        android:id="@+id/news"
-        android:name="se.sigmaconnectivity.blescanner.ui.news.NewsFragment"
-        tools:layout="@layout/fragment_news" />
-
-    <fragment
-        android:id="@+id/help"
-        android:name="se.sigmaconnectivity.blescanner.ui.help.HelpFragment"
-        tools:layout="@layout/fragment_help" />
-
     <action
         android:id="@+id/action_to_infoDialog"
         app:destination="@+id/infoDialogFragment" />

@@ -1,51 +1,6 @@
 <resources>
     <string name="app_name">SafeSafe</string>
-
-    <!--  Notifications  -->
     <string name="notification_channel_name">SafeSafe notifications</string>
-    <string name="notification_content">Stan serwisów:\nSkanowanie: %1$s\nRozgłaszanie: %2$s</string>
-    <string name="stop_service">Stop service!</string>
-    <string name="start_service">Start service!</string>
-    <string name="qr_code">QR code</string>
-
-    <!--  FeatureStatus  -->
-    <string name="feature_active">Aktywny</string>
-    <string name="feature_inactive">Nieaktywny</string>
-
-    <!--  Main Menu  -->
-    <string name="main_menu_home">Home</string>
-    <string name="main_menu_news">News</string>
-    <string name="main_menu_help">Help</string>
-    <string name="possible_infection_info">    You may have been infected, please contact with services!</string>
-
-    <!--  HomeFragment  -->
-    <string name="home_last_update_title">Last update</string>
-    <string name="home_last_update_content">%1$s\n%2$s</string>
-    <string name="home_scanned_today_title">Scanned today</string>
-    <string name="home_scanned_today_content">%1$d\ndevices</string>
-    <string name="home_subtitle">How it works?</string>
-    <string name="home_devices">devices</string>
-    <string name="home_first_index">1.</string>
-    <string name="home_first_info">Please let the app run in the background.</string>
-    <string name="home_second_index">2.</string>
-    <string name="home_second_info">If application will detect that you contacted someone with disease you will be informed by notification.</string>
-    <string name="home_third_index">3.</string>
-    <string name="home_third_info">In case when you are having symptoms please proceed to the \'Help\' section.</string>
-
-    <!--  NewsFragment  -->
-    <string name="news_url">https://twitter.com/MZ_GOV_PL</string>
-
-    <!--  HelpFragment  -->
-    <string name="help_qr_title">QR code</string>
-    <string name="help_qr_info">This QR code represents your unique ID,\nwhich you have to show to your doctor.</string>
-    <string name="help_near_you_title">Near you</string>
-    <string name="help_hospitals_title">Hospitals</string>
-    <string name="help_pharmacies_title">Pharmacies</string>
-    <string name="help_supplies_title">Supplies</string>
-    <string name="help_instructions_title">Instructions</string>
-    <string name="help_useful_information_title">Useful information</string>
-    <string name="help_useful_information_info">How to wash hands right and properly. Useful tricks and lifehacks.</string>
-
     <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur
 adipiscing elit. Ut vehicula, diam vel
 dignissim porttitor, urna nulla consectetur
