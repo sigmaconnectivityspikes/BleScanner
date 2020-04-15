@@ -52,12 +52,12 @@ class PushNotificationManager(private val context: Context) {
             context,
             0,
             notificationIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_ONE_SHOT
         )
         return NotificationCompat.Builder(context, Consts.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setContentText(content)
             .setContentIntent(pendingIntent)
             .build().apply {
