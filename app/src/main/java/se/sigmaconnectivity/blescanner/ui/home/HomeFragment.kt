@@ -16,7 +16,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.BuildConfig
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.FragmentHomeBinding
-import se.sigmaconnectivity.blescanner.service.BleScanService
 import se.sigmaconnectivity.blescanner.ui.common.BaseFragment
 import se.sigmaconnectivity.blescanner.ui.home.HomeViewModel.ErrorEvent
 
@@ -60,7 +59,6 @@ class HomeFragment : BaseFragment() {
             loadUrl(BuildConfig.WEB)
         }
         binding.webView.setOnLongClickListener {
-            vm.toggleBleService()
             false
         }
         requireActivity().onBackPressedDispatcher.addCallback(
