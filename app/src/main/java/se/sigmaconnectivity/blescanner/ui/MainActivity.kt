@@ -3,7 +3,6 @@ package se.sigmaconnectivity.blescanner.ui
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -13,23 +12,12 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.messaging.FirebaseMessaging
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.disposables.CompositeDisposable
-import org.koin.androidx.viewmodel.ext.android.viewModel
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.databinding.ActivityMainBinding
 import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
-
-    companion object {
-        fun getIntent(context: Context) = Intent(context, MainActivity::class.java)
-    }
-
-    private val rxPermissions by lazy {
-        RxPermissions(this)
-    }
-
-    private val mainViewModel by viewModel<MainViewModel>()
 
     private val compositeDispose = CompositeDisposable()
     private lateinit var binding: ActivityMainBinding
@@ -38,8 +26,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         binding.lifecycleOwner = this
-
-        setUpNavigation()
 
         createNotificationChannel()
         initializeFcm()
@@ -83,20 +69,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 Timber.d(msg)
             }
-
-
-    }
-
-    private fun setUpNavigation() {
-        //TODO change infection UX
-        /*val navHostFragment: NavHostFragment? = supportFragmentManager
-            .findFragmentById(R.id.navHostFragment) as? NavHostFragment
-        if (navHostFragment != null) {
-            NavigationUI.set(
-                binding.bottomNavigation,
-                navHostFragment.navController
-            )
-        }*/
     }
 
     override fun onDestroy() {
