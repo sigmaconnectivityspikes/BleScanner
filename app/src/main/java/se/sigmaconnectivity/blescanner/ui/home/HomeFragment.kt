@@ -55,8 +55,8 @@ class HomeFragment : BaseFragment() {
             webViewClient = WebViewClient()
             addJavascriptInterface(
                 NativeBridgeInterface(
-                    vm::setPhoneNumberHash,
-                    vm::getDeviceMetrics
+                    vm::setBridgeData,
+                    vm::getBridgeData
                 ), NativeBridgeInterface.NATIVE_BRIDGE_NAME
             )
             loadUrl(BuildConfig.WEB)
