@@ -11,8 +11,8 @@ class ScanBleDevicesUseCase(
     private val bleScanner: BleScanner
 ) {
 
-    fun execute(serviceUuid: String, timeout: Long): Observable<ScanResultItem> =
-        bleScanner.scanBleDevicesWithTimeout(serviceUuid, timeout)
+    fun execute(serviceUuids: List<String>, timeout: Long): Observable<ScanResultItem> =
+        bleScanner.scanBleDevicesWithTimeout(serviceUuids, timeout)
             .subscribeOn(Schedulers.io())
             .observeOn(postExecutionThread.scheduler)
 }

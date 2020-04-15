@@ -1,6 +1,6 @@
 package se.sigmaconnectivity.blescanner.domain.model
 
-data class ContactDeviceItem(
+data class ContactItem(
     val hashId: String,
     val timestamp: Long
 ) {
@@ -8,7 +8,7 @@ data class ContactDeviceItem(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as ContactDeviceItem
+        other as ContactItem
 
         if (hashId != other.hashId) return false
 

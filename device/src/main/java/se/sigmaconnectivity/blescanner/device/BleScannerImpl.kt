@@ -9,6 +9,7 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.os.ParcelUuid
+import android.util.Log
 import io.reactivex.Observable
 import io.reactivex.subjects.BehaviorSubject
 import io.reactivex.subjects.PublishSubject
@@ -37,15 +38,17 @@ class BleScannerImpl(private val context: Context) :
         BLEFeatureState.Stopped
     )
 
-    private fun startScan(serviceUuid: String) {
-        val scanFilter = ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid.fromString(serviceUuid))
-            .build()
+    private fun startScan(serviceUuids: List<String>) {
+        val scanFilters = serviceUuids.map {
+            ScanFilter.Builder()
+                .setServiceUuid(ParcelUuid.fromString(it))
+                .build()
+        }
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
         bleScanner?.let {
             try {
-                it.startScan(mutableListOf(scanFilter), settings, scanCallback)
+                it.startScan(scanFilters, settings, scanCallback)
             } catch (e: Exception) {
                 onScanError(e)
             }
@@ -76,20 +79,20 @@ class BleScannerImpl(private val context: Context) :
         scanningStatusSubject.onNext(BLEFeatureState.Error(errorType))
     }
 
-    override fun scanBleDevicesWithTimeout(serviceUuid: String, timeoutMillis: Long): Observable<ScanResultItem> =
-        scanBleDevices(serviceUuid).takeUntil(
+    override fun scanBleDevicesWithTimeout(serviceUuids: List<String>, timeoutMillis: Long): Observable<ScanResultItem> =
+        scanBleDevices(serviceUuids).takeUntil(
             Observable.timer(timeoutMillis, TimeUnit.MILLISECONDS)
         )
 
     override val trackScanningStatus: Observable<BLEFeatureState>
         get() = scanningStatusSubject.hide()
 
-    private fun scanBleDevices(serviceUuid: String): Observable<ScanResultItem> =
+    private fun scanBleDevices(serviceUuids: List<String>): Observable<ScanResultItem> =
         scanResultsSubject
             .hide()
             .doOnSubscribe {
                 Timber.d("scanBleDevices started...")
-                startScan(serviceUuid)
+                startScan(serviceUuids)
             }.doOnDispose {
                 Timber.d("scanBleDevices done...")
                 stopScan()
@@ -105,6 +108,21 @@ class BleScannerImpl(private val context: Context) :
     private val scanCallback = object: ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
+
+            if (result.scanRecord?.serviceUuids?.first() == ParcelUuid.fromString("75d04b13-7220-452c-9eaf-99b553166f71")){
+                // test distance
+                val power = result.scanRecord?.txPowerLevel
+                val rssi = result.rssi
+                Timber.d("TX-getTxPowerLevel: %d", power)
+                Timber.d("TX-measured rssi: %d", rssi)
+                val baseDist = power?.minus(rssi)
+                Timber.d("TX-base distance: %d", baseDist)
+                val ef = 2 // environmental factor
+                val advDist = baseDist?.div((10.0*ef))?.let { Math.pow(10.0, it) }
+                Timber.d("TX-adv distance: %f", advDist?.div(1000))
+                Log.d("TX-", "getTxPowerLevel: $power, TX-measured rssi: $rssi, TX-base distance: $baseDist, TX-adv distance: ${advDist?.div(1000)}")
+            }
+
             scanResultsSubject.onNext(
                 ScanResultWrapper.ScanResultSuccess(
                     result
@@ -118,4 +136,3 @@ class BleScannerImpl(private val context: Context) :
         class ScanResultFailure(val error: Throwable) : ScanResultWrapper()
     }
 }
-

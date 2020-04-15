@@ -3,14 +3,14 @@ package se.sigmaconnectivity.blescanner.service
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import se.sigmaconnectivity.blescanner.Consts
-import se.sigmaconnectivity.blescanner.domain.model.ContactDeviceItem
+import se.sigmaconnectivity.blescanner.domain.model.ContactItem
 import se.sigmaconnectivity.blescanner.domain.usecase.ContactUseCase
 import timber.log.Timber
 import java.util.*
 
 class ScanResultsObserver(private val contactUseCase: ContactUseCase) {
 
-    fun onNewResults(scanResults: Set<ContactDeviceItem>) {
+    fun onNewResults(scanResults: Set<ContactItem>) {
         refreshPendingLostItems(scanResults)
         val newItems = scanResults - existingScanItems
         Timber.d("New items found: $newItems")
@@ -31,11 +31,11 @@ class ScanResultsObserver(private val contactUseCase: ContactUseCase) {
 
     private val compositeDisposable = CompositeDisposable()
 
-    private val existingScanItems = HashSet<ContactDeviceItem>()
+    private val existingScanItems = HashSet<ContactItem>()
 
-    private val pendingLostItems = HashMap<ContactDeviceItem, Int>()
+    private val pendingLostItems = HashMap<ContactItem, Int>()
 
-    private fun processFirstMatch(item: ContactDeviceItem) {
+    private fun processFirstMatch(item: ContactItem) {
         Timber.d("First contact match: $item")
         existingScanItems.add(item)
         contactUseCase.processContactMatch(item.hashId, item.timestamp)
@@ -46,7 +46,7 @@ class ScanResultsObserver(private val contactUseCase: ContactUseCase) {
             }).addTo(compositeDisposable)
     }
 
-    private fun processMatchLost(item: ContactDeviceItem) {
+    private fun processMatchLost(item: ContactItem) {
         Timber.d("Processing contact lost item: ${item.hashId}")
             val previousValue = pendingLostItems[item] ?: 0
             pendingLostItems[item] =  previousValue + 1
@@ -63,6 +63,6 @@ class ScanResultsObserver(private val contactUseCase: ContactUseCase) {
         }
     }
 
-    private fun refreshPendingLostItems(scanResults: Set<ContactDeviceItem>)
+    private fun refreshPendingLostItems(scanResults: Set<ContactItem>)
             = scanResults.forEach { pendingLostItems.remove(it) }
 }

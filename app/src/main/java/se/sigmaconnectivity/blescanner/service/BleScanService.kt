@@ -25,7 +25,7 @@ import se.sigmaconnectivity.blescanner.R
 import se.sigmaconnectivity.blescanner.domain.HASH_SIZE_BYTES
 import se.sigmaconnectivity.blescanner.domain.HashConverter
 import se.sigmaconnectivity.blescanner.domain.model.BLEFeatureState
-import se.sigmaconnectivity.blescanner.domain.model.ContactDeviceItem
+import se.sigmaconnectivity.blescanner.domain.model.ContactItem
 import se.sigmaconnectivity.blescanner.domain.model.LocationStatus
 import se.sigmaconnectivity.blescanner.domain.model.ScanResultItem
 import se.sigmaconnectivity.blescanner.domain.usecase.device.AdvertiseTxUseCase
@@ -115,7 +115,7 @@ class BleScanService() : Service() {
         Observable.interval(0, SCAN_PERIOD_SEC, TimeUnit.SECONDS)
             .flatMapSingle {
                 scanBleDevicesUseCase.execute(
-                    Consts.SERVICE_USER_HASH_UUID,
+                    listOf(Consts.SERVICE_USER_HASH_UUID, Consts.SERVICE_TX_UUID),
                     SCAN_TIMEOUT_SEC * 1000L
                 )
                     .filter {
@@ -124,14 +124,14 @@ class BleScanService() : Service() {
                     .map {
                         val uid = assembleUID(it)
                         checkNotNull(uid)
-                        ContactDeviceItem(
+                        ContactItem(
                             timestamp = System.currentTimeMillis(),
                             hashId = uid
                         )
                     }
                     .collect(
                         { HashSet() },
-                        { items: MutableSet<ContactDeviceItem>, item: ContactDeviceItem ->
+                        { items: MutableSet<ContactItem>, item: ContactItem ->
                             items.add(
                                 item
                             )
