@@ -6,21 +6,15 @@ import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel
 
 class HomeViewModel() : BaseViewModel() {
 
-    private val devicesAmount = MutableLiveData<String>()
-
-    //TODO implement last update time
-    private val lastUpdateHour = MutableLiveData<String>().apply { value = "14:55" }
-    private val lastUpdateDate = MutableLiveData<String>().apply { value = "Mar 20" }
     private val error = MutableLiveData<ErrorEvent>()
 
     val errorEvent: LiveData<ErrorEvent> = error
 
-    fun setPhoneNumberHash(hash: String) {
+    fun setBridgeData(dataType: Int, dataJson: String) {
        //DUMMY
     }
 
-
-    fun getDeviceMetrics(): String {
+    fun getBridgeData(dataType: Int): String {
         return "DUMMY"/*Gson().toJson( //TODO gson model
             contactUseCase.getContacts()
                 .blockingFirst()
@@ -28,7 +22,6 @@ class HomeViewModel() : BaseViewModel() {
     }
 
     sealed class ErrorEvent {
-        object BluetoothNotEnabled : ErrorEvent()
         data class Unknown(val message: String) : ErrorEvent()
     }
 }

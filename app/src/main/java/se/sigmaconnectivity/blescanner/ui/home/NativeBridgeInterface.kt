@@ -5,20 +5,20 @@ import timber.log.Timber
 
 
 class NativeBridgeInterface(
-    private val setPhoneNumberHashCallback: (hash: String) -> Unit,
-    private val getMatchedDevicesCallback: () -> String
+    private val setBridgeDataCallback: ((dataType: Int, data: String) -> Unit),
+    private val getBridgeDataCallback: (dataType: Int) -> String
 ) {
 
     @JavascriptInterface
-    fun setPhoneNumberHash(hash: String) {
-        Timber.d("setPhoneNumberHash: $hash")
-        setPhoneNumberHashCallback(hash)
+    fun setBridgeData(dataType: Int, data: String) {
+        Timber.d("setBridgeData: $dataType - $data")
+        setBridgeDataCallback(dataType, data)
     }
 
     @JavascriptInterface
-    fun getMatchedDevices(): String {
-        Timber.d("getMatchedDevices called")
-        return getMatchedDevicesCallback()
+    fun getBridgeData(dataType: Int): String {
+        Timber.d("getBridgeData called: $dataType")
+        return getBridgeDataCallback(dataType)
     }
 
     companion object {

@@ -52,8 +52,8 @@ class HomeFragment : BaseFragment() {
             webViewClient = WebViewClient()
             addJavascriptInterface(
                 NativeBridgeInterface(
-                    vm::setPhoneNumberHash,
-                    vm::getDeviceMetrics
+                    vm::setBridgeData,
+                    vm::getBridgeData
                 ), NativeBridgeInterface.NATIVE_BRIDGE_NAME
             )
             loadUrl(BuildConfig.WEB)
@@ -77,9 +77,6 @@ class HomeFragment : BaseFragment() {
     private fun registerObservers() {
         vm.errorEvent.observe(viewLifecycleOwner, Observer { errorEvent ->
             when (errorEvent) {
-                is ErrorEvent.BluetoothNotEnabled -> {
-                    requestBluetooth()
-                }
                 is ErrorEvent.Unknown -> {
                     view?.let { Snackbar.make(it, errorEvent.message, Snackbar.LENGTH_SHORT) }
                 }
