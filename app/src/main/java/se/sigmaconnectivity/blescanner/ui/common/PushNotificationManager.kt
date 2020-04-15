@@ -60,6 +60,8 @@ class PushNotificationManager(private val context: Context) {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentText(content)
             .setContentIntent(pendingIntent)
-            .build()
+            .build().apply {
+                flags = NotificationCompat.FLAG_AUTO_CANCEL
+            }
     }
 }

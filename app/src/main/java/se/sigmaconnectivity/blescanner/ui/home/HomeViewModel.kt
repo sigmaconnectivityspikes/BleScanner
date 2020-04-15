@@ -4,7 +4,6 @@ import se.sigmaconnectivity.blescanner.ui.common.BaseViewModel
 
 class HomeViewModel() : BaseViewModel() {
 
-
     fun setBridgeData(dataType: Int, dataJson: String) {
        //DUMMY
     }
