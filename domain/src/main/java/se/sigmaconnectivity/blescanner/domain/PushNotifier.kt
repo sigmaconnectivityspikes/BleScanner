@@ -1,3 +1,5 @@
 package se.sigmaconnectivity.blescanner.domain
 
-interface PushNotifier
+interface PushNotifier {
+    fun showNotification(title: String, content: String)
+}

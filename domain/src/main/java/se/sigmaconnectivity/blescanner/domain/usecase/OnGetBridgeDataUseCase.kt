@@ -2,10 +2,18 @@ package se.sigmaconnectivity.blescanner.domain.usecase
 
 import se.sigmaconnectivity.blescanner.domain.model.OutgoingBridgeDataType
 
-class OnGetBridgeDataUseCase() {
+class OnGetBridgeDataUseCase(
+    private val getNotificationDataAndClear: GetNotificationDataAndClearUseCase
+) {
 
     fun execute(type: OutgoingBridgeDataType): String {
-        //TODO: logic here
-        return "DUMMY"
+        when(type) {
+            OutgoingBridgeDataType.NOTIFICATION_DATA -> {
+                return getNotificationDataAndClear.execute()
+            }
+            else -> {
+                throw IllegalArgumentException("OutgoingBridgeDataType has wrong value")
+            }
+        }
     }
 }
