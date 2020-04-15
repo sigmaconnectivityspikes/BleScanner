@@ -8,51 +8,31 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import se.sigmaconnectivity.blescanner.Consts
 import se.sigmaconnectivity.blescanner.R
+import se.sigmaconnectivity.blescanner.domain.PushNotifier
 import se.sigmaconnectivity.blescanner.ui.MainActivity
 import timber.log.Timber
-import kotlin.random.Random
 
-class PushNotificationManager(private val context: Context) {
+class PushNotifierImpl(private val context: Context): PushNotifier {
 
     private val notificationManager by lazy {
         context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
     }
 
-    fun showNotification(title: String, content: String) {
-        showNotificationWithID(Random.nextInt(), title, content)
-    }
-
-    fun showNotificationWithData(title: String, content: String, data: String) {
-        showNotificationWithID(Random.nextInt(), title, content, data)
-    }
-
-    fun showNotificationWithID(
-        notificationId: Int,
-        title: String,
-        content: String,
-        data: String? = null
-    ) {
-        val notification = createNotification(title, content, data)
+    override fun showNotification(title: String, content: String) {
+        val notification = createNotification(title, content)
         notificationManager?.let {
-            it.notify(notificationId, notification)
+            it.notify(Consts.NOTIFICATION_PUSH_ID, notification)
             Timber.d("Show notification: $title, $content")
         } ?: Timber.d("Show notification failed")
     }
 
-    private fun createNotification(title: String, content: String, data: String?): Notification {
+    private fun createNotification(title: String, content: String): Notification {
         val notificationIntent = Intent(context, MainActivity::class.java)
-        data?.let {
-            notificationIntent.putExtra(Consts.NOTIFICATION_EXTRA_DATA, it)
-            notificationIntent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
-            )
-        }
         val pendingIntent = PendingIntent.getActivity(
             context,
             0,
             notificationIntent,
-            PendingIntent.FLAG_ONE_SHOT
+            PendingIntent.FLAG_UPDATE_CURRENT
         )
         return NotificationCompat.Builder(context, Consts.NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
