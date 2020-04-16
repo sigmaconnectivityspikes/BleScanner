@@ -58,11 +58,20 @@ class MainActivity : AppCompatActivity() {
                 Timber.d("FCM token $token")
             })
 
-        FirebaseMessaging.getInstance().subscribeToTopic("infections")
+        FirebaseMessaging.getInstance().subscribeToTopic("general")
             .addOnCompleteListener { task ->
-                var msg = "FCM topic subscribe success"
+                var msg = "FCM GENERAL topic subscribe success"
                 if (!task.isSuccessful) {
-                    msg = "FCM topic subscribe failed"
+                    msg = "FCM GENERAL topic subscribe failed"
+                }
+                Timber.d(msg)
+            }
+
+        FirebaseMessaging.getInstance().subscribeToTopic("daily")
+            .addOnCompleteListener { task ->
+                var msg = "FCM DAILY topic subscribe success"
+                if (!task.isSuccessful) {
+                    msg = "FCM DAILY topic subscribe failed"
                 }
                 Timber.d(msg)
             }
